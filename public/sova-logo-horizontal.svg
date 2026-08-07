@@ -1,0 +1,21 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1400 512" width="1400" height="512">
+  <defs>
+    <clipPath id="mark-clip">
+      <rect width="32" height="32" rx="8"/>
+    </clipPath>
+  </defs>
+  <g transform="translate(64 64) scale(12)" clip-path="url(#mark-clip)">
+    <rect width="32" height="32" rx="8" fill="#f18f01"/>
+    <circle cx="28" cy="16" r="12" fill="#fff"/>
+    <path d="M27 11h5v10h-5a5 5 0 0 1 0-10Z" fill="#f18f01"/>
+  </g>
+  <text
+    x="500"
+    y="355"
+    fill="#171a1f"
+    font-family="Inter, Segoe UI, Arial, sans-serif"
+    font-size="280"
+    font-weight="900"
+    letter-spacing="-14"
+  >SOVA</text>
+</svg>
