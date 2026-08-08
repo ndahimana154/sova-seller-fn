@@ -84,7 +84,7 @@ export interface SellerApplicationResponse {
 const locationPath = '/seller/shop-applications/locations'
 const sellerApiBaseUrl = env.sellerApiUrl?.replace(/\/$/, '') || ''
 
-function sellerEndpoint(path: string) {
+export function sellerEndpoint(path: string) {
   const endpoint = `${sellerApiBaseUrl}${path}`
   return endpoint.startsWith('/') ? new URL(endpoint, window.location.origin).toString() : endpoint
 }

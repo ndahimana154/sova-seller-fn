@@ -19,10 +19,12 @@ import {
 import { useState } from 'react'
 import { Link, Outlet, useLocation, useNavigate } from 'react-router-dom'
 import { Brand } from '../../components/ui/Brand'
-import type { ClientUser } from '../../lib/clientAuth'
+import type { ClientUser } from '../../lib/sellerAuth'
 import { useAppDispatch, useAppSelector } from '../../store/hooks'
 import { setSellerSidebarOpen, toggleSellerSidebarCollapsed } from '../../store/uiSlice'
 import { appPaths } from '../../router/paths'
+
+type Section = 'dashboard' | 'products' | 'categories' | 'settings'
 
 interface SellerDashboardPageProps {
   onLogout: () => void
@@ -78,6 +80,7 @@ export function SellerDashboardPage({
   })
   const [productOpen, setProductOpen] = useState(true)
   const activeSection = sectionFromPath(location.pathname)
+  const sectionLabels = { categories: 'Product categories', dashboard: 'Dashboard', products: 'Products', settings: 'Account settings' } as const
   const initials = user.name
     .split(/\s+/)
     .map((part) => part[0])
@@ -85,12 +88,14 @@ export function SellerDashboardPage({
     .slice(0, 2)
     .toUpperCase() || 'S'
 
-  function navigate(section: 'dashboard' | 'products' | 'categories') {
+  function navigate(section: Section) {
     const path = section === 'dashboard'
       ? appPaths.dashboard
       : section === 'products'
         ? appPaths.products
-        : appPaths.categories
+        : section === 'settings'
+          ? appPaths.settings
+          : appPaths.categories
     routerNavigate(path)
   }
 
@@ -177,12 +182,13 @@ export function SellerDashboardPage({
                           </div>
                         )
                       }
+                      const target = item.label === 'Dashboard' ? 'dashboard' : item.label === 'Account settings' ? 'settings' : undefined
                       return (
                         <button
-                          className={`seller-nav-item ${item.label === 'Dashboard' && activeSection === 'dashboard' ? 'seller-nav-item-active' : ''}`}
+                          className={`seller-nav-item ${target && activeSection === target ? 'seller-nav-item-active' : ''}`}
                           key={item.label}
                           onClick={() => {
-                            if (item.label === 'Dashboard') navigate('dashboard')
+                            if (target) navigate(target)
                             dispatch(setSellerSidebarOpen(false))
                           }}
                           type="button"
@@ -217,7 +223,7 @@ export function SellerDashboardPage({
           <kbd className="rounded bg-[#fffaf3] px-1 py-0.5 text-[9px]">⌘ K</kbd>
         </label>
         <div className="ml-auto flex items-center gap-1.5">
-          <button className="seller-icon-button" aria-label="Settings" type="button"><Settings size={16} /></button>
+          <Link aria-label="Account settings" className="seller-icon-button" to={appPaths.settings}><Settings size={16} /></Link>
           <button className="seller-user-menu" type="button">
             <span className="grid size-7 place-items-center rounded-full bg-[#fff6e8] text-[10px] font-bold text-[#c96f00]">{initials}</span>
             <span className="hidden text-left sm:block">
@@ -233,14 +239,14 @@ export function SellerDashboardPage({
         <header className="border-b border-[#eee7de] bg-white px-4 py-3 lg:px-5">
           <nav aria-label="Breadcrumb" className="flex items-center gap-1.5 text-[10px] text-[#a69c92]">
             <Link aria-label="Dashboard" className="transition-colors hover:text-[#c96f00]" to={appPaths.dashboard}><Home size={12} /></Link>
-            {activeSection === 'dashboard' ? (
-              <><ChevronRight size={11} /><span aria-current="page" className="font-medium text-[#6f665d]">Dashboard</span></>
+            {activeSection === 'dashboard' || activeSection === 'settings' ? (
+              <><ChevronRight size={11} /><span aria-current="page" className="font-medium text-[#6f665d]">{sectionLabels[activeSection]}</span></>
             ) : (
               <>
                 <ChevronRight size={11} />
                 <Link className="transition-colors hover:text-[#c96f00]" to={appPaths.products}>Product management</Link>
                 <ChevronRight size={11} />
-                <span aria-current="page" className="font-medium text-[#6f665d]">{activeSection === 'products' ? 'Products' : 'Product categories'}</span>
+                <span aria-current="page" className="font-medium text-[#6f665d]">{sectionLabels[activeSection]}</span>
               </>
             )}
           </nav>
@@ -251,8 +257,9 @@ export function SellerDashboardPage({
   )
 }
 
-function sectionFromPath(pathname: string): 'dashboard' | 'products' | 'categories' {
-  if (pathname.startsWith('/seller/dashboard/product-categories')) return 'categories'
-  if (pathname.startsWith('/seller/dashboard/products')) return 'products'
+function sectionFromPath(pathname: string): Section {
+  if (pathname.startsWith(appPaths.categories)) return 'categories'
+  if (pathname.startsWith(appPaths.products)) return 'products'
+  if (pathname.startsWith(appPaths.settings)) return 'settings'
   return 'dashboard'
 }

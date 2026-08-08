@@ -1,12 +1,16 @@
 import { useCallback } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { isSeller, loginClient, logoutClient } from '../lib/clientAuth'
+import {
+  loginWithOtp,
+  loginWithPassword,
+  logoutSeller,
+  type ClientSession,
+} from '../lib/sellerAuth'
 import { appPaths } from '../router/paths'
 import { clearSession, setSession } from '../store/authSlice'
 import { useAppDispatch } from '../store/hooks'
 import { setToast } from '../store/uiSlice'
 
-/** Sign-in and sign-out for the seller portal. */
 export function useAuthActions() {
   const dispatch = useAppDispatch()
   const navigate = useNavigate()
@@ -16,17 +20,34 @@ export function useAuthActions() {
     window.setTimeout(() => dispatch(setToast('')), 1800)
   }, [dispatch])
 
-  const authenticate = useCallback(async (email: string, otp: string) => {
-    const session = await loginClient(email, otp)
+  const startSession = useCallback((session: ClientSession) => {
     dispatch(setSession(session))
-    // A signed-in account without a shop is sent to the application form.
-    navigate(isSeller(session) ? appPaths.dashboard : appPaths.apply)
-    notify(isSeller(session) ? 'Welcome to your seller workspace' : 'Finish your shop application to start selling')
+    if (session.mustChangePassword) {
+      navigate(appPaths.changePassword, { replace: true })
+      notify('Choose a password to finish setting up your account')
+      return
+    }
+    navigate(appPaths.dashboard, { replace: true })
+    notify('Welcome to your seller workspace')
+  }, [dispatch, navigate, notify])
+
+  const authenticateWithPassword = useCallback(async (email: string, password: string) => {
+    startSession(await loginWithPassword(email, password))
+  }, [startSession])
+
+  const authenticateWithOtp = useCallback(async (email: string, otp: string) => {
+    startSession(await loginWithOtp(email, otp))
+  }, [startSession])
+
+  const completePasswordChange = useCallback((session: ClientSession) => {
+    dispatch(setSession(session))
+    navigate(appPaths.dashboard, { replace: true })
+    notify('Your password has been updated')
   }, [dispatch, navigate, notify])
 
   const logout = useCallback(async () => {
     try {
-      await logoutClient()
+      await logoutSeller()
     } finally {
       dispatch(clearSession())
       navigate(appPaths.login)
@@ -34,5 +55,5 @@ export function useAuthActions() {
     }
   }, [dispatch, navigate, notify])
 
-  return { authenticate, logout, notify }
+  return { authenticateWithOtp, authenticateWithPassword, completePasswordChange, logout, notify }
 }
