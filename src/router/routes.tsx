@@ -7,28 +7,35 @@ const SellerProductCreatePage = lazy(() => import('../pages/seller/products/Sell
 const SellerProductDetailsPage = lazy(() => import('../pages/seller/products/SellerProductDetailsPage').then((m) => ({ default: m.SellerProductDetailsPage })))
 const SellerProductEditPage = lazy(() => import('../pages/seller/products/SellerProductEditPage').then((m) => ({ default: m.SellerProductEditPage })))
 const SellerProductListPage = lazy(() => import('../pages/seller/products/SellerProductListPage').then((m) => ({ default: m.SellerProductListPage })))
+const SellerSettingsPage = lazy(() => import('../pages/seller/SellerSettingsPage').then((m) => ({ default: m.SellerSettingsPage })))
 
 interface AppRoutesProps {
-  authScreen: ReactNode
-  dashboardLayout: ReactNode
   application: ReactNode
+  authScreen: ReactNode
+  changePassword: ReactNode
+  dashboardLayout: ReactNode
+  home: ReactNode
 }
 
-export function AppRoutes({ application, authScreen, dashboardLayout }: AppRoutesProps) {
+export function AppRoutes({ application, authScreen, changePassword, dashboardLayout, home }: AppRoutesProps) {
   return (
     <Suspense fallback={<RouteFallback />}>
       <Routes>
+        <Route element={home} path="/" />
         <Route element={authScreen} path="login" />
+        <Route element={changePassword} path="change-password" />
         <Route element={application} path="apply" />
-        <Route element={dashboardLayout} path="/">
+        <Route element={dashboardLayout} path="dashboard">
           <Route element={<DashboardHome />} index />
           <Route element={<SellerProductListPage />} path="products" />
           <Route element={<SellerProductCreatePage />} path="products/new" />
           <Route element={<SellerProductDetailsPage />} path="products/:productId" />
           <Route element={<SellerProductEditPage />} path="products/:productId/edit" />
           <Route element={<SellerProductCategoriesPage />} path="product-categories" />
+          <Route element={<SellerSettingsPage />} path="settings" />
           <Route element={<Navigate replace to={appPaths.dashboard} />} path="*" />
         </Route>
+        <Route element={<Navigate replace to={appPaths.home} />} path="*" />
       </Routes>
     </Suspense>
   )

@@ -9,6 +9,7 @@ export interface ClientUser {
 export interface ClientSession {
   accessToken: string
   expiresAt: number
+  mustChangePassword: boolean
   tokenType: string
   user: ClientUser
 }
