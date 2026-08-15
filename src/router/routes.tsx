@@ -3,6 +3,8 @@ import { Navigate, Route, Routes } from 'react-router-dom'
 import { appPaths } from './paths'
 
 const SellerProductCategoriesPage = lazy(() => import('../pages/seller/products/SellerProductCategoriesPage').then((m) => ({ default: m.SellerProductCategoriesPage })))
+const SellerProductVideosPage = lazy(() => import('../pages/seller/products/SellerProductVideosPage').then((m) => ({ default: m.SellerProductVideosPage })))
+const SellerVideoDetailsPage = lazy(() => import('../pages/seller/products/SellerVideoDetailsPage').then((m) => ({ default: m.SellerVideoDetailsPage })))
 const SellerProductDetailsPage = lazy(() => import('../pages/seller/products/SellerProductDetailsPage').then((m) => ({ default: m.SellerProductDetailsPage })))
 const SellerProductWizardPage = lazy(() => import('../pages/seller/products/SellerProductWizardPage').then((m) => ({ default: m.SellerProductWizardPage })))
 const SellerProductListPage = lazy(() => import('../pages/seller/products/SellerProductListPage').then((m) => ({ default: m.SellerProductListPage })))
@@ -32,6 +34,8 @@ export function AppRoutes({ application, authScreen, changePassword, dashboardLa
           <Route element={<SellerProductDetailsPage />} path="products/:productId" />
           <Route element={<SellerProductWizardPage />} path="products/:productId/edit" />
           <Route element={<SellerProductCategoriesPage />} path="product-categories" />
+          <Route element={<SellerProductVideosPage />} path="product-videos" />
+          <Route element={<SellerVideoDetailsPage />} path="product-videos/:videoId" />
           <Route element={<SellerSettingsPage />} path="settings" />
           <Route element={<Navigate replace to={appPaths.dashboard} />} path="*" />
         </Route>

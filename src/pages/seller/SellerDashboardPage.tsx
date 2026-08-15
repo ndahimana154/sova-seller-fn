@@ -1,4 +1,5 @@
 import {
+  Clapperboard,
   ChevronDown,
   ChevronRight,
   ClipboardList,
@@ -25,7 +26,15 @@ import { setSellerSidebarOpen, toggleSellerSidebarCollapsed } from '../../store/
 import { appPaths } from '../../router/paths'
 import { ui } from '../../components/ui/styles'
 
-type Section = 'dashboard' | 'products' | 'categories' | 'settings'
+type Section = 'dashboard' | 'products' | 'categories' | 'videos' | 'settings'
+
+const SECTION_PATHS: Record<Section, string> = {
+  categories: appPaths.categories,
+  dashboard: appPaths.dashboard,
+  products: appPaths.products,
+  settings: appPaths.settings,
+  videos: appPaths.videos,
+}
 
 interface SellerDashboardPageProps {
   onLogout: () => void
@@ -48,6 +57,7 @@ const groups = [
         children: [
           { label: 'Products', icon: ShoppingBag },
           { label: 'Product categories', icon: Tags },
+          { label: 'Videos', icon: Clapperboard },
         ],
       },
       { label: 'Orders', icon: ClipboardList },
@@ -79,7 +89,7 @@ export function SellerDashboardPage({
   })
   const [productOpen, setProductOpen] = useState(true)
   const activeSection = sectionFromPath(location.pathname)
-  const sectionLabels = { categories: 'Product categories', dashboard: 'Dashboard', products: 'Products', settings: 'Account settings' } as const
+  const sectionLabels = { categories: 'Product categories', dashboard: 'Dashboard', products: 'Products', settings: 'Account settings', videos: 'Videos' } as const
   const initials = user.name
     .split(/\s+/)
     .map((part) => part[0])
@@ -93,14 +103,7 @@ export function SellerDashboardPage({
   const sidebarAction = `flex w-full items-center gap-2.5 rounded-md px-2.5 py-2 text-xs font-medium text-muted transition-colors hover:bg-soft hover:text-ink ${collapsed ? 'lg:justify-center lg:px-0' : ''}`
 
   function navigate(section: Section) {
-    const path = section === 'dashboard'
-      ? appPaths.dashboard
-      : section === 'products'
-        ? appPaths.products
-        : section === 'settings'
-          ? appPaths.settings
-          : appPaths.categories
-    routerNavigate(path)
+    routerNavigate(SECTION_PATHS[section])
   }
 
   return (
@@ -165,7 +168,12 @@ export function SellerDashboardPage({
                               <div className="relative ml-[17px] border-l border-line pl-2.5">
                                 {item.children.map((child) => {
                                   const ChildIcon = child.icon
-                                  const section = child.label === 'Products' ? 'products' : 'categories'
+                                  const section: Section =
+                                    child.label === 'Products'
+                                      ? 'products'
+                                      : child.label === 'Videos'
+                                        ? 'videos'
+                                        : 'categories'
                                   return (
                                     <button
                                       className={`${navItem} py-1.5 text-[11px] ${activeSection === section ? navItemActive : ''}`}
@@ -250,13 +258,23 @@ export function SellerDashboardPage({
           <nav aria-label="Breadcrumb" className="flex items-center gap-1.5 text-[10px] text-faint [&_[aria-current]]:font-medium [&_[aria-current]]:text-muted [&_a:hover]:text-ink">
             <Link aria-label="Dashboard" to={appPaths.dashboard}><Home size={12} /></Link>
             {activeSection === 'dashboard' || activeSection === 'settings' ? (
-              <><ChevronRight size={11} /><span aria-current="page" >{sectionLabels[activeSection]}</span></>
+              <><ChevronRight size={11} /><span aria-current="page">{sectionLabels[activeSection]}</span></>
             ) : (
               <>
                 <ChevronRight size={11} />
-                <Link to={appPaths.products}>Product management</Link>
+                <span>Product management</span>
                 <ChevronRight size={11} />
-                <span aria-current="page" >{sectionLabels[activeSection]}</span>
+                {/* On a record page the section stays a link, which is what
+                    replaces the per-page back button. */}
+                {location.pathname === SECTION_PATHS[activeSection] ? (
+                  <span aria-current="page">{sectionLabels[activeSection]}</span>
+                ) : (
+                  <>
+                    <Link to={SECTION_PATHS[activeSection]}>{sectionLabels[activeSection]}</Link>
+                    <ChevronRight size={11} />
+                    <span aria-current="page">Details</span>
+                  </>
+                )}
               </>
             )}
           </nav>
@@ -269,6 +287,7 @@ export function SellerDashboardPage({
 
 function sectionFromPath(pathname: string): Section {
   if (pathname.startsWith(appPaths.categories)) return 'categories'
+  if (pathname.startsWith(appPaths.videos)) return 'videos'
   if (pathname.startsWith(appPaths.products)) return 'products'
   if (pathname.startsWith(appPaths.settings)) return 'settings'
   return 'dashboard'

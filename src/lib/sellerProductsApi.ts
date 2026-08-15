@@ -171,6 +171,39 @@ export interface LowStockVariant {
   variantId: string
 }
 
+export interface VideoProduct {
+  coverUrl: string | null
+  id: string
+  isVisible: boolean
+  name: string
+  slug: string
+  status: ProductStatus
+}
+
+export interface SellerVideo {
+  altText: string | null
+  createdAt: string
+  durationSeconds: number | null
+  id: string
+  isPublished: boolean
+  /** Published and advertising at least one live product. */
+  isVisible: boolean
+  likeCount: number
+  mimeType: string
+  products: VideoProduct[]
+  sizeBytes: number
+  updatedAt: string
+  url: string
+}
+
+export interface VideoListQuery {
+  limit?: number
+  page?: number
+  productId?: string
+  search?: string
+  state?: 'PUBLISHED' | 'UNPUBLISHED'
+}
+
 export interface ProductAttributeInput {
   /** Send an existing option id to rename it in place. */
   id?: string
@@ -337,6 +370,24 @@ export const sellerProductsApi = {
     body(api.post<ApiEnvelope<SellerProduct>>(`/seller/products/${productId}/publish`)),
   unpublish: (productId: string) =>
     body(api.post<ApiEnvelope<SellerProduct>>(`/seller/products/${productId}/unpublish`)),
+
+  videos: (query: VideoListQuery = {}) =>
+    body(api.get<ApiEnvelope<Paginated<SellerVideo>>>('/seller/videos', { params: query })),
+  video: (videoId: string) => body(api.get<ApiEnvelope<SellerVideo>>(`/seller/videos/${videoId}`)),
+  uploadVideo: (input: { altText?: string; file: File; productIds: string[] }) => {
+    const form = new FormData()
+    form.set('file', input.file)
+    if (input.altText) form.set('altText', input.altText)
+    for (const id of input.productIds) form.append('productIds', id)
+    return body(api.post<ApiEnvelope<SellerVideo>, FormData>('/seller/videos', form))
+  },
+  updateVideo: (videoId: string, input: { altText?: string | null; productIds?: string[] }) =>
+    body(api.patch<ApiEnvelope<SellerVideo>, typeof input>(`/seller/videos/${videoId}`, input)),
+  publishVideo: (videoId: string) =>
+    body(api.post<ApiEnvelope<SellerVideo>>(`/seller/videos/${videoId}/publish`)),
+  unpublishVideo: (videoId: string) =>
+    body(api.post<ApiEnvelope<SellerVideo>>(`/seller/videos/${videoId}/unpublish`)),
+  deleteVideo: (videoId: string) => api.delete<ApiEnvelope<null>>(`/seller/videos/${videoId}`),
 
   dashboard: () => body(api.get<ApiEnvelope<SellerDashboard>>('/seller/dashboard')),
   lowStock: (threshold?: number) =>
