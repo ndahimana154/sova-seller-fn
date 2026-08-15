@@ -1,3 +1,5 @@
+import { env } from "../config/env";
+
 export const appPaths = {
   home: '/',
   apply: '/apply',
@@ -10,4 +12,5 @@ export const appPaths = {
   productEdit: (id: string) => `/dashboard/products/${id}/edit`,
   categories: '/dashboard/product-categories',
   settings: '/dashboard/settings',
+  storefront: env.storefrontUrl,
 } as const

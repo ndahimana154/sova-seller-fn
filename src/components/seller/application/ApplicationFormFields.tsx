@@ -3,6 +3,7 @@ import { cloneElement, isValidElement, useContext, useState, type ReactElement }
 import { sellerResourceUrl } from "../../../lib/sellerApi";
 import { Select } from "../../ui/Select";
 import { ValidationErrorsContext } from "./validationContext";
+import { ui } from "../../ui/styles";
 
 export function FormHeading({ copy, icon, title }: { copy: string; icon: React.ReactNode; title: string }) {
   return (
@@ -34,7 +35,7 @@ export function FormField({ children, className = "", label }: { children: React
           </span>
         )}
       </span>
-      <span className={`seller-input ${error ? "border-red-400 focus-within:border-red-500 focus-within:ring-red-100" : ""}`}>
+      <span className={`${ui.input} ${error ? "border-red-400 focus-within:border-red-500 focus-within:ring-red-100" : ""}`}>
         {custom && field ? cloneElement(field as ReactElement<{ "aria-labelledby"?: string }>, { "aria-labelledby": labelId }) : children}
       </span>
       {error && (

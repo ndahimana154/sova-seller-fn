@@ -23,12 +23,12 @@ import type { ClientUser } from '../../lib/sellerAuth'
 import { useAppDispatch, useAppSelector } from '../../store/hooks'
 import { setSellerSidebarOpen, toggleSellerSidebarCollapsed } from '../../store/uiSlice'
 import { appPaths } from '../../router/paths'
+import { ui } from '../../components/ui/styles'
 
 type Section = 'dashboard' | 'products' | 'categories' | 'settings'
 
 interface SellerDashboardPageProps {
   onLogout: () => void
-  onStorefrontOpen: () => void
   user: ClientUser
 }
 
@@ -65,7 +65,6 @@ const groups = [
 
 export function SellerDashboardPage({
   onLogout,
-  onStorefrontOpen,
   user,
 }: SellerDashboardPageProps) {
   const dispatch = useAppDispatch()
@@ -88,6 +87,11 @@ export function SellerDashboardPage({
     .slice(0, 2)
     .toUpperCase() || 'S'
 
+  const label = collapsed ? 'lg:hidden' : ''
+  const navItem = `relative flex w-full items-center gap-2.5 rounded-xl px-3 py-2.5 text-xs font-semibold text-muted transition-colors hover:bg-soft hover:text-ink ${collapsed ? 'lg:justify-center lg:px-0' : ''}`
+  const navItemActive = "bg-soft font-bold text-ink before:absolute before:inset-y-1.5 before:left-0 before:w-0.5 before:rounded-full before:bg-ink before:content-['']"
+  const sidebarAction = `flex w-full items-center gap-2.5 rounded-md px-2.5 py-2 text-xs font-medium text-muted transition-colors hover:bg-soft hover:text-ink ${collapsed ? 'lg:justify-center lg:px-0' : ''}`
+
   function navigate(section: Section) {
     const path = section === 'dashboard'
       ? appPaths.dashboard
@@ -100,23 +104,23 @@ export function SellerDashboardPage({
   }
 
   return (
-    <div className="seller-workspace">
+    <div className="min-h-screen bg-canvas text-[15px] text-ink">
       {mobileOpen && (
         <button
           aria-label="Close navigation"
-          className="fixed inset-0 z-30 bg-[#241f1a]/20 lg:hidden"
+          className="fixed inset-0 z-30 bg-ink/20 lg:hidden"
           onClick={() => dispatch(setSellerSidebarOpen(false))}
           type="button"
         />
       )}
 
-      <aside className={`seller-sidebar ${mobileOpen ? 'translate-x-0' : ''} ${collapsed ? 'seller-sidebar-collapsed' : ''}`}>
-        <div className="flex h-14 items-center justify-between border-b border-[#eee7de] px-3">
+      <aside className={`fixed inset-y-0 left-0 z-40 flex w-60 -translate-x-full flex-col border-r border-line bg-white shadow-[8px_0_30px_rgb(23_26_31/0.04)] transition-[width,transform] lg:translate-x-0 ${mobileOpen ? 'translate-x-0' : ''} ${collapsed ? 'lg:w-14' : ''}`}>
+        <div className="flex h-14 items-center justify-between border-b border-line px-3">
           <Brand compact={collapsed} />
-          <button className="seller-icon-button lg:hidden" onClick={() => dispatch(setSellerSidebarOpen(false))} type="button"><X size={17} /></button>
+          <button className={`${ui.iconButton} lg:hidden`} onClick={() => dispatch(setSellerSidebarOpen(false))} type="button"><X size={17} /></button>
           <button
             aria-label={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}
-            className="seller-icon-button hidden lg:grid"
+            className={`${ui.iconButton} hidden lg:grid`}
             onClick={() => dispatch(toggleSellerSidebarCollapsed())}
             type="button"
           >
@@ -128,15 +132,15 @@ export function SellerDashboardPage({
           {groups.map((group) => {
             const groupOpen = expandedGroups[group.id]
             return (
-              <div className="seller-nav-group" key={group.id}>
+              <div className="mb-3" key={group.id}>
                 <button
                   aria-expanded={groupOpen}
-                  className="seller-nav-group-trigger"
+                  className={`mb-1 flex w-full items-center justify-between px-2.5 py-1 text-[9px] font-semibold uppercase tracking-[0.12em] text-faint ${collapsed ? 'lg:mx-auto lg:mb-1.5 lg:h-px lg:w-6 lg:bg-line lg:p-0' : ''}`}
                   onClick={() => setExpandedGroups((current) => ({ ...current, [group.id]: !groupOpen }))}
                   type="button"
                 >
-                  <span className="seller-sidebar-label">{group.label}</span>
-                  <ChevronDown className={`seller-sidebar-label transition-transform ${groupOpen ? '' : '-rotate-90'}`} size={13} />
+                  <span className={label}>{group.label}</span>
+                  <ChevronDown className={`${label} transition-transform ${groupOpen ? '' : '-rotate-90'}`} size={13} />
                 </button>
                 {(groupOpen || collapsed) && (
                   <div className="space-y-0.5">
@@ -146,7 +150,7 @@ export function SellerDashboardPage({
                         return (
                           <div key={item.label}>
                             <button
-                              className="seller-nav-item"
+                              className={navItem}
                               onClick={() => {
                                 if (collapsed) dispatch(toggleSellerSidebarCollapsed())
                                 setProductOpen((value) => !value)
@@ -154,17 +158,17 @@ export function SellerDashboardPage({
                               type="button"
                             >
                               <Icon size={15} />
-                              <span className="seller-sidebar-label min-w-0 flex-1 truncate text-left">{item.label}</span>
-                              <ChevronRight className={`seller-sidebar-label transition-transform ${productOpen ? 'rotate-90' : ''}`} size={13} />
+                              <span className={`${label} min-w-0 flex-1 truncate text-left`}>{item.label}</span>
+                              <ChevronRight className={`${label} transition-transform ${productOpen ? 'rotate-90' : ''}`} size={13} />
                             </button>
                             {productOpen && !collapsed && (
-                              <div className="seller-nav-children">
+                              <div className="relative ml-[17px] border-l border-line pl-2.5">
                                 {item.children.map((child) => {
                                   const ChildIcon = child.icon
                                   const section = child.label === 'Products' ? 'products' : 'categories'
                                   return (
                                     <button
-                                      className={`seller-nav-item ${activeSection === section ? 'seller-nav-item-active' : ''}`}
+                                      className={`${navItem} py-1.5 text-[11px] ${activeSection === section ? navItemActive : ''}`}
                                       key={child.label}
                                       onClick={() => {
                                         navigate(section)
@@ -173,7 +177,7 @@ export function SellerDashboardPage({
                                       type="button"
                                     >
                                       <ChildIcon size={15} />
-                                      <span className="seller-sidebar-label truncate">{child.label}</span>
+                                      <span className={`${label} truncate`}>{child.label}</span>
                                     </button>
                                   )
                                 })}
@@ -185,7 +189,7 @@ export function SellerDashboardPage({
                       const target = item.label === 'Dashboard' ? 'dashboard' : item.label === 'Account settings' ? 'settings' : undefined
                       return (
                         <button
-                          className={`seller-nav-item ${target && activeSection === target ? 'seller-nav-item-active' : ''}`}
+                          className={`${navItem} ${target && activeSection === target ? navItemActive : ''}`}
                           key={item.label}
                           onClick={() => {
                             if (target) navigate(target)
@@ -194,7 +198,7 @@ export function SellerDashboardPage({
                           type="button"
                         >
                           <Icon size={15} />
-                          <span className="seller-sidebar-label truncate">{item.label}</span>
+                          <span className={`${label} truncate`}>{item.label}</span>
                         </button>
                       )
                     })}
@@ -205,48 +209,54 @@ export function SellerDashboardPage({
           })}
         </nav>
 
-        <div className="border-t border-[#eee7de] p-2">
-          <button className="seller-signout" onClick={onStorefrontOpen} title={collapsed ? 'Storefront' : undefined} type="button">
-            <Store size={16} /><span className="seller-sidebar-label">View storefront</span>
-          </button>
-          <button className="seller-signout" onClick={onLogout} title={collapsed ? 'Sign out' : undefined} type="button">
-            <LogOut size={16} /><span className="seller-sidebar-label">Sign out</span>
+        <div className="border-t border-line p-2">
+          <a
+            className={sidebarAction}
+            href={appPaths.storefront}
+            rel="noreferrer"
+            target="_blank"
+            title={collapsed ? 'Storefront' : undefined}
+          >
+            <Store size={16} /><span className={label}>View storefront</span>
+          </a>
+          <button className={sidebarAction} onClick={onLogout} title={collapsed ? 'Sign out' : undefined} type="button">
+            <LogOut size={16} /><span className={label}>Sign out</span>
           </button>
         </div>
       </aside>
 
-      <header className={`seller-topbar ${collapsed ? 'seller-topbar-collapsed' : ''}`}>
-        <button className="seller-icon-button lg:hidden" onClick={() => dispatch(setSellerSidebarOpen(true))} type="button"><Menu size={18} /></button>
-        <label className="hidden h-8 w-72 items-center gap-2 rounded-md border border-[#eee7de] px-2.5 text-[#a69c92] lg:flex">
+      <header className={`sticky top-0 z-20 flex h-16 items-center gap-2 border-b border-line bg-white/95 px-4 backdrop-blur transition-[margin] lg:px-6 ${collapsed ? 'lg:ml-14' : 'lg:ml-60'}`}>
+        <button className={`${ui.iconButton} lg:hidden`} onClick={() => dispatch(setSellerSidebarOpen(true))} type="button"><Menu size={18} /></button>
+        <label className="hidden h-8 w-72 items-center gap-2 rounded-md border border-line px-2.5 text-faint lg:flex">
           <Search size={14} />
-          <input className="min-w-0 flex-1 border-0 bg-transparent text-xs text-[#241f1a] outline-none" placeholder="Search" />
-          <kbd className="rounded bg-[#fffaf3] px-1 py-0.5 text-[9px]">⌘ K</kbd>
+          <input className="min-w-0 flex-1 border-0 bg-transparent text-xs text-ink outline-none" placeholder="Search" />
+          <kbd className="rounded bg-soft px-1 py-0.5 text-[9px]">⌘ K</kbd>
         </label>
         <div className="ml-auto flex items-center gap-1.5">
-          <Link aria-label="Account settings" className="seller-icon-button" to={appPaths.settings}><Settings size={16} /></Link>
-          <button className="seller-user-menu" type="button">
-            <span className="grid size-7 place-items-center rounded-full bg-[#fff6e8] text-[10px] font-bold text-[#c96f00]">{initials}</span>
+          <Link aria-label="Account settings" className={ui.iconButton} to={appPaths.settings}><Settings size={16} /></Link>
+          <button className="flex items-center gap-2 rounded-full border border-line bg-white px-1.5 py-1 transition-colors hover:bg-soft" type="button">
+            <span className="grid size-7 place-items-center rounded-full bg-ink text-[10px] font-bold text-white">{initials}</span>
             <span className="hidden text-left sm:block">
-              <strong className="block max-w-32 truncate text-[11px] text-[#241f1a]">{user.name || 'SOVA seller'}</strong>
-              <small className="block max-w-32 truncate text-[9px] text-[#6f665d]">{user.email}</small>
+              <strong className="block max-w-32 truncate text-[11px] text-ink">{user.name || 'SOVA seller'}</strong>
+              <small className="block max-w-32 truncate text-[9px] text-muted">{user.email}</small>
             </span>
-            <ChevronDown className="text-[#a69c92]" size={13} />
+            <ChevronDown className="text-faint" size={13} />
           </button>
         </div>
       </header>
 
-      <main className={`seller-content ${collapsed ? 'seller-content-collapsed' : ''}`}>
-        <header className="border-b border-[#eee7de] bg-white px-4 py-3 lg:px-5">
-          <nav aria-label="Breadcrumb" className="flex items-center gap-1.5 text-[10px] text-[#a69c92]">
-            <Link aria-label="Dashboard" className="transition-colors hover:text-[#c96f00]" to={appPaths.dashboard}><Home size={12} /></Link>
+      <main className={`transition-[margin] ${collapsed ? 'lg:ml-14' : 'lg:ml-60'}`}>
+        <header className="border-b border-line bg-white px-4 py-3 lg:px-5">
+          <nav aria-label="Breadcrumb" className="flex items-center gap-1.5 text-[10px] text-faint [&_[aria-current]]:font-medium [&_[aria-current]]:text-muted [&_a:hover]:text-ink">
+            <Link aria-label="Dashboard" to={appPaths.dashboard}><Home size={12} /></Link>
             {activeSection === 'dashboard' || activeSection === 'settings' ? (
-              <><ChevronRight size={11} /><span aria-current="page" className="font-medium text-[#6f665d]">{sectionLabels[activeSection]}</span></>
+              <><ChevronRight size={11} /><span aria-current="page" >{sectionLabels[activeSection]}</span></>
             ) : (
               <>
                 <ChevronRight size={11} />
-                <Link className="transition-colors hover:text-[#c96f00]" to={appPaths.products}>Product management</Link>
+                <Link to={appPaths.products}>Product management</Link>
                 <ChevronRight size={11} />
-                <span aria-current="page" className="font-medium text-[#6f665d]">{sectionLabels[activeSection]}</span>
+                <span aria-current="page" >{sectionLabels[activeSection]}</span>
               </>
             )}
           </nav>

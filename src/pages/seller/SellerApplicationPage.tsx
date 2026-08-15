@@ -2,6 +2,7 @@ import { Building2, FileCheck2, LoaderCircle, MapPin } from "lucide-react";
 import { useEffect, useState, type FormEvent } from "react";
 import { getCells, getDistricts, getLocationTree, getProvinces, getSectors, getVillages, renewShopApplication, submitShopApplication, trackShopApplication, type LocationOption, type ShopApplicationPayload } from "../../lib/sellerApi";
 import { normalizeApiError } from "../../api/errors";
+import { useToast } from "../../hooks/useToast";
 import { Select } from "../../components/ui/Select";
 import {
   ApplicationStatusModal,
@@ -38,8 +39,7 @@ export function SellerApplicationPage() {
   const [locationLoading, setLocationLoading] = useState(false);
   const [locationError, setLocationError] = useState("");
   const [submitting, setSubmitting] = useState(false);
-  const [submissionError, setSubmissionError] = useState("");
-  const [submissionSuccess, setSubmissionSuccess] = useState("");
+  const toast = useToast();
   const [formVersion, setFormVersion] = useState(0);
   const [validationErrors, setValidationErrors] = useState<Record<string, string>>({});
   const [tracking, setTracking] = useState(false);
@@ -166,7 +166,6 @@ export function SellerApplicationPage() {
     const invalidFields = findInvalidFields(event.currentTarget);
     if (invalidFields.length) {
       setValidationErrors(Object.fromEntries(invalidFields.map((field) => [field.name, fieldValidationMessage(field)])));
-      setSubmissionError("");
       invalidFields[0].focus();
       return;
     }
@@ -174,7 +173,7 @@ export function SellerApplicationPage() {
     const registrationDocument = data.get("rbdRegistrationDocument");
     const logo = data.get("logo");
     if ((!(registrationDocument instanceof File) || !registrationDocument.size) && !renewalApplication?.shop.rbdRegistrationDocument) {
-      setSubmissionError("Please attach the RDB registration document.");
+      toast.error("Please attach the RDB registration document.");
       return;
     }
     const applicantEmail = String(data.get("applicantEmail")).trim();
@@ -196,8 +195,6 @@ export function SellerApplicationPage() {
     };
     setSubmitting(true);
     setValidationErrors({});
-    setSubmissionError("");
-    setSubmissionSuccess("");
     try {
       await (renewalApplication ? renewShopApplication(renewalApplication.applicationCode, payload) : submitShopApplication(payload));
       setRenewalApplication(null);
@@ -213,10 +210,10 @@ export function SellerApplicationPage() {
       setVillages([]);
       setLocationHydrated(false);
       setFormVersion((current) => current + 1);
-      setSubmissionSuccess("Your request has been sent successfully.");
+      toast.success("Your request has been sent successfully.");
       window.scrollTo({ top: 0, behavior: "smooth" });
     } catch (error) {
-      setSubmissionError(normalizeApiError(error).message);
+      toast.error(normalizeApiError(error).message);
     } finally {
       setSubmitting(false);
     }
@@ -243,7 +240,6 @@ export function SellerApplicationPage() {
     }
     setRenewalApplication(returnedApplication);
     setApplication(null);
-    setSubmissionError("");
     setLocationLoading(true);
     setLocationError("");
     window.scrollTo({ top: 0, behavior: "smooth" });
@@ -283,14 +279,9 @@ export function SellerApplicationPage() {
     <main className="min-h-[75vh]">
       <SellerApplicationHero onTrack={trackApplication} renewing={Boolean(renewalApplication)} tracking={tracking} />
 
-      <section className="page-container py-10 sm:py-14">
+      <section className="mx-auto w-full max-w-[1320px] px-4 sm:px-6 lg:px-8 py-10 sm:py-14">
         <ValidationErrorsContext.Provider value={validationErrors}>
-          {submissionSuccess && (
-            <p className="mb-6 rounded-xl border border-green-200 bg-green-50 px-4 py-3 text-sm font-semibold text-green-700" role="status">
-              {submissionSuccess}
-            </p>
-          )}
-          <form
+                    <form
             className="w-full rounded-3xl border border-line bg-white p-6 sm:p-8"
             key={`${renewalApplication?.applicationCode || "new-application"}-${formVersion}`}
             noValidate
@@ -304,8 +295,6 @@ export function SellerApplicationPage() {
                   return next;
                 });
               }
-              setSubmissionError("");
-              setSubmissionSuccess("");
             }}
             onSubmit={submit}
           >
@@ -456,7 +445,7 @@ export function SellerApplicationPage() {
               </div>
               <div className="mt-5 space-y-3">
                 <label className="flex cursor-pointer items-start gap-3 rounded-xl bg-soft p-4 text-xs leading-5 text-muted">
-                  <input className="auth-checkbox mt-0.5" name="informationConfirmed" required type="checkbox" />
+                  <input className="size-4 rounded border-line accent-ink mt-0.5" name="informationConfirmed" required type="checkbox" />
                   <span>
                     I confirm that this information is accurate and authorize SOVA to review the business details before approving the shop.
                     <span className="ml-1 text-red-600" aria-hidden="true">
@@ -470,7 +459,7 @@ export function SellerApplicationPage() {
                   </p>
                 )}
                 <label className="flex cursor-pointer items-start gap-3 rounded-xl bg-soft p-4 text-xs leading-5 text-muted">
-                  <input className="auth-checkbox mt-0.5" name="termsAccepted" required type="checkbox" />
+                  <input className="size-4 rounded border-line accent-ink mt-0.5" name="termsAccepted" required type="checkbox" />
                   <span>
                     I have read and agree to the{" "}
                     <a className="font-bold text-ink underline underline-offset-2 transition hover:text-primary-dark" href="#terms">
@@ -491,7 +480,7 @@ export function SellerApplicationPage() {
             </div>
 
             <div className="mt-8 flex justify-end border-t border-line pt-5">
-              <button className="primary-button min-w-40 justify-center" disabled={submitting} type="submit">
+              <button className="inline-flex items-center justify-center gap-2 rounded-full bg-ink px-5 py-3 text-xs font-bold text-white transition hover:-translate-y-0.5 hover:bg-primary-dark min-w-40 justify-center" disabled={submitting} type="submit">
                 {submitting ? (
                   <>
                     <LoaderCircle className="animate-spin" size={15} /> Submitting…
@@ -503,12 +492,7 @@ export function SellerApplicationPage() {
                 )}
               </button>
             </div>
-            {submissionError && (
-              <p className="mt-4 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-xs font-semibold text-red-700" role="alert">
-                {submissionError}
-              </p>
-            )}
-          </form>
+                      </form>
         </ValidationErrorsContext.Provider>
       </section>
       {application && <ApplicationStatusModal application={application} onClose={() => setApplication(null)} onEdit={() => void editReturnedApplication(application)} />}

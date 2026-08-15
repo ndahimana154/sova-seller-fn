@@ -175,7 +175,7 @@ export function Select({
       {name && (
         <select
           aria-hidden="true"
-          className="sr-only-field"
+          className="pointer-events-none absolute inset-0 size-full appearance-none opacity-0"
           disabled={disabled}
           name={name}
           onChange={(event) => onChange(event.target.value)}
@@ -190,7 +190,7 @@ export function Select({
 
       {open && createPortal(
         <div
-          className="select-popup fixed z-[200] overflow-hidden rounded-xl border border-line bg-white shadow-[0_20px_50px_rgb(23_26_31/0.16)]"
+          className="fixed animate-pop motion-reduce:animate-none z-[200] overflow-hidden rounded-xl border border-line bg-white shadow-[0_20px_50px_rgb(23_26_31/0.16)]"
           onKeyDown={handleKeyDown}
           ref={popupRef}
           style={{

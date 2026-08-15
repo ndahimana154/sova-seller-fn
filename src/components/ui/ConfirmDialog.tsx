@@ -1,6 +1,7 @@
 import { AlertTriangle } from 'lucide-react'
 import { useCallback, useEffect, useRef, useState, type ReactNode } from 'react'
 import { createPortal } from 'react-dom'
+import { ui } from './styles'
 
 export interface ConfirmRequest {
   body?: ReactNode
@@ -39,11 +40,11 @@ export function ConfirmDialog({
   }, [busy, onCancel])
 
   return createPortal(
-    <div className="overlay-backdrop z-[120] grid place-items-center p-4" onMouseDown={() => !busy && onCancel()}>
+    <div className="fixed inset-0 z-[120] grid animate-fade-in place-items-center bg-ink/45 p-4 backdrop-blur-sm motion-reduce:animate-none" onMouseDown={() => !busy && onCancel()}>
       <div
         aria-labelledby="confirm-dialog-title"
         aria-modal="true"
-        className="overlay-panel w-full max-w-sm rounded-2xl border border-line bg-white p-5 shadow-[0_30px_80px_rgb(23_26_31/0.22)]"
+        className="w-full max-w-sm animate-rise motion-reduce:animate-none rounded-2xl border border-line bg-white p-5 shadow-[0_30px_80px_rgb(23_26_31/0.22)]"
         onMouseDown={(event) => event.stopPropagation()}
         role="alertdialog"
       >
@@ -57,9 +58,9 @@ export function ConfirmDialog({
           </div>
         </div>
         <div className="mt-5 flex justify-end gap-2">
-          <button className="seller-outline-button" disabled={busy} onClick={onCancel} type="button">Cancel</button>
+          <button className={ui.outlineButton} disabled={busy} onClick={onCancel} type="button">Cancel</button>
           <button
-            className={danger ? 'seller-danger-button min-h-9 rounded-full px-4' : 'seller-primary-button'}
+            className={danger ? 'inline-flex min-h-9 items-center justify-center gap-1.5 rounded-full border border-red-200 bg-white px-4 text-xs font-semibold text-red-600 hover:bg-red-50 disabled:opacity-60' : ui.primaryButton}
             disabled={busy}
             onClick={onConfirm}
             ref={confirmRef}

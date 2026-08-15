@@ -79,14 +79,14 @@ export function ForgotPasswordForm({ onCancel, onDone }: ForgotPasswordFormProps
         <>
           <PasswordField autoComplete="new-password" autoFocus icon={<KeyRound size={17} />} label="New password" name="newPassword" />
           <PasswordField autoComplete="new-password" icon={<KeyRound size={17} />} label="Confirm new password" name="confirmPassword" />
-          <p className="text-[11px] text-muted">Use at least 8 characters.</p>
+          <p className="text-[11px] leading-5 text-muted">Use at least 8 characters.</p>
         </>
       )}
       <AuthError message={error} />
-      <button className="auth-submit" disabled={submitting || (step === 'code' && otp.length < OTP_LENGTH)} type="submit">
+      <button className="flex min-h-10 w-full items-center justify-center rounded-xl bg-primary px-5 text-xs font-black text-white shadow-[0_10px_24px_rgb(23_26_31/0.18)] transition hover:-translate-y-0.5 hover:bg-primary-dark disabled:pointer-events-none disabled:opacity-65" disabled={submitting || (step === 'code' && otp.length < OTP_LENGTH)} type="submit">
         {submitting ? 'Please wait…' : step === 'email' ? 'Email me a reset code' : step === 'code' ? 'Verify code' : 'Set new password'}
       </button>
-      <button className="w-full text-xs font-bold text-muted hover:text-ink hover:underline" onClick={onCancel} type="button">
+      <button className="text-xs font-bold text-muted transition hover:text-ink hover:underline w-full" onClick={onCancel} type="button">
         Back to sign in
       </button>
     </form>

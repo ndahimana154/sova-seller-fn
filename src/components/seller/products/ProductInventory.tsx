@@ -1,13 +1,16 @@
 import { ArrowDownLeft, ArrowUpRight, Plus } from 'lucide-react'
 import { useCallback, useEffect, useState, type FormEvent } from 'react'
+import { Button } from '../../ui/Button'
 import { DataTable } from '../../ui/DataTable'
 import { Modal } from '../../ui/Modal'
 import { Select } from '../../ui/Select'
-import { Feedback, errorMessage } from './ProductPageUi'
+import { useToast } from '../../../hooks/useToast'
+import { Field } from './ProductPageUi'
 import {
   sellerProductsApi,
   type InventoryMovement,
   type InventoryMovementType,
+  type ProductVariant,
   type SellerProduct,
 } from '../../../lib/sellerProductsApi'
 
@@ -21,192 +24,207 @@ const LABELS: Record<InventoryMovementType, string> = {
   STOCK_OUT: 'Stock out',
 }
 
-export function ProductInventory({ onRecorded, product }: {
-  onRecorded: (product: SellerProduct) => void
+const variantLabel = (variant: ProductVariant) =>
+  variant.name?.trim() || variant.attributes.map((attribute) => attribute.value).join(' / ') || variant.sku
+
+const ALL = 'ALL'
+
+export function ProductInventory({
+  onChanged,
+  product,
+}: {
+  onChanged: (variants: ProductVariant[]) => void
   product: SellerProduct
 }) {
+  const variants = product.variants.filter((item) => item.isActive)
+  const [filter, setFilter] = useState(variants.length > 1 ? ALL : (variants[0]?.id ?? ''))
   const [movements, setMovements] = useState<InventoryMovement[]>([])
   const [meta, setMeta] = useState({ totalItems: 0, totalPages: 1 })
   const [page, setPage] = useState(1)
   const [limit, setLimit] = useState(10)
-  const [open, setOpen] = useState(false)
-  const [error, setError] = useState('')
-  const [notice, setNotice] = useState('')
+  const [target, setTarget] = useState('')
+  const [search, setSearch] = useState('')
+  const toast = useToast()
+
+  const scoped = filter === ALL ? null : (variants.find((item) => item.id === filter) ?? variants[0] ?? null)
+  const onHand = scoped ? scoped.stockQuantity : variants.reduce((total, item) => total + item.stockQuantity, 0)
 
   const loadMovements = useCallback(async () => {
     try {
-      const result = await sellerProductsApi.inventoryMovements(product.id, { limit, page })
+      const result = await sellerProductsApi.stockHistory(product.id, {
+        limit,
+        page,
+        search: search.trim() || undefined,
+        variantId: filter === ALL ? undefined : filter,
+      })
       setMovements(result.contents)
       setMeta(result.meta)
     } catch (cause) {
-      setError(errorMessage(cause))
+      toast.error(cause)
     }
-  }, [limit, page, product.id])
+  }, [filter, limit, page, product.id, search, toast])
 
-  useEffect(() => { void loadMovements() }, [loadMovements])
+  useEffect(() => {
+    void loadMovements()
+  }, [loadMovements])
 
-  async function recorded(updated: SellerProduct, type: InventoryMovementType) {
-    onRecorded(updated)
-    setOpen(false)
-    setNotice(`${LABELS[type]} recorded. Stock is now ${updated.quantity}.`)
-    setPage(1)
-    await loadMovements()
+  async function record(event: FormEvent<HTMLFormElement>, type: InventoryMovementType) {
+    event.preventDefault()
+    const data = new FormData(event.currentTarget)
+    try {
+      const updated = await sellerProductsApi.recordStock(product.id, target, {
+        quantity: Number(data.get('quantity') ?? 0),
+        reason: String(data.get('reason') ?? ''),
+        type,
+      })
+      onChanged(updated)
+      setTarget('')
+      const changed = updated.find((item) => item.id === target)
+      toast.success(`${LABELS[type]} recorded. Stock is now ${changed?.stockQuantity ?? 0}.`)
+      setPage(1)
+      await loadMovements()
+    } catch (cause) {
+      toast.error(cause)
+    }
   }
+
+  if (!variants.length) return <p className="text-xs text-muted">This product has no SKUs yet.</p>
 
   return (
     <div className="space-y-4">
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        <p className="text-xs text-muted">
-          Current stock: <strong className="text-sm text-ink">{product.quantity}</strong> unit{product.quantity === 1 ? '' : 's'}
-        </p>
-        <button className="seller-primary-button" onClick={() => { setNotice(''); setError(''); setOpen(true) }} type="button">
-          <Plus size={14} /> Record movement
-        </button>
-      </div>
-
-      <Feedback error={error} notice={notice} />
-
       <DataTable
-        columns={['Date', 'Movement', 'Stock before', 'Change', 'Stock after', 'Narration', 'Recorded by']}
+        activeFilterCount={scoped ? 1 : 0}
+        columns={['Variant', 'Type', 'Change', 'From', 'To', 'Reason', 'By', 'When']}
         emptyMessage="No stock movements recorded yet."
+        filters={
+          <Field className="w-56" label="Variant">
+            <Select
+              onChange={(value) => {
+                setFilter(value)
+                setPage(1)
+              }}
+              options={[
+                ...(variants.length > 1 ? [{ hint: 'Every SKU', label: 'All variants', value: ALL }] : []),
+                ...variants.map((item) => ({ hint: item.sku, label: variantLabel(item), value: item.id })),
+              ]}
+              value={scoped?.id ?? ALL}
+              variant="bare"
+            />
+          </Field>
+        }
+        onSearchChange={(value) => {
+          setPage(1)
+          setSearch(value)
+        }}
+        primaryAction={
+          <Button onClick={() => setTarget(scoped?.id ?? variants[0]!.id)}>
+            <Plus size={14} /> Record
+          </Button>
+        }
         pagination={{
           onPageChange: setPage,
-          onPageSizeChange: (size) => { setLimit(size); setPage(1) },
+          onPageSizeChange: (value) => {
+            setLimit(value)
+            setPage(1)
+          },
           page,
           pageSize: limit,
           totalItems: meta.totalItems,
           totalPages: meta.totalPages,
         }}
         rows={movements.map((movement) => [
-          <span className="whitespace-nowrap text-ink">{formatMoment(movement.createdAt)}</span>,
-          <MovementBadge type={movement.movementType} />,
-          <span className="text-ink">{movement.previousQuantity}</span>,
-          <Change value={movement.quantityDifference} />,
-          <span className="text-ink">{movement.newQuantity}</span>,
-          <span className="block max-w-[22rem] truncate" title={movement.reason}>{movement.reason}</span>,
-          <span className="text-ink">{movement.actorName ?? '—'}</span>,
+          <span className="block">
+            <span className="block font-semibold text-ink">{movement.variantName?.trim() || '—'}</span>
+            <span className="block font-mono text-[10px] text-muted">{movement.variantSku}</span>
+          </span>,
+          <span className="inline-flex items-center gap-1.5 font-semibold">
+            {movement.movementType === 'STOCK_IN' ? (
+              <ArrowUpRight className="text-green-600" size={13} />
+            ) : (
+              <ArrowDownLeft className="text-red-600" size={13} />
+            )}
+            {LABELS[movement.movementType]}
+          </span>,
+          <span className={movement.quantityDifference >= 0 ? 'text-green-700' : 'text-red-700'}>
+            {movement.quantityDifference > 0 ? '+' : ''}
+            {movement.quantityDifference}
+          </span>,
+          movement.previousQuantity,
+          movement.newQuantity,
+          movement.reason,
+          movement.actorName ?? '—',
+          new Date(movement.createdAt).toLocaleString(),
         ])}
+        searchPlaceholder="Search movements"
+        subtitle={
+          scoped
+            ? `${onHand} on hand in ${variantLabel(scoped)}`
+            : `${onHand} on hand across ${variants.length} SKUs`
+        }
+        title="Stock movements"
       />
 
-      {open && (
-        <RecordMovementModal
-          onClose={() => setOpen(false)}
-          onRecorded={recorded}
-          product={product}
-        />
+      {target && (
+        <Modal onClose={() => setTarget('')} title="Record a movement">
+          <StockForm
+            onSubmit={record}
+            onTargetChange={setTarget}
+            target={target}
+            variants={variants}
+          />
+        </Modal>
       )}
     </div>
   )
 }
 
-function RecordMovementModal({ onClose, onRecorded, product }: {
-  onClose: () => void
-  onRecorded: (product: SellerProduct, type: InventoryMovementType) => Promise<void>
-  product: SellerProduct
+function StockForm({
+  onSubmit,
+  onTargetChange,
+  target,
+  variants,
+}: {
+  onSubmit: (event: FormEvent<HTMLFormElement>, type: InventoryMovementType) => void
+  onTargetChange: (variantId: string) => void
+  target: string
+  variants: ProductVariant[]
 }) {
   const [type, setType] = useState<InventoryMovementType>('STOCK_IN')
-  const [quantity, setQuantity] = useState('')
-  const [reason, setReason] = useState('')
-  const [saving, setSaving] = useState(false)
-  const [error, setError] = useState('')
-
-  const amount = Number(quantity || 0)
-  const projected = type === 'STOCK_IN' ? product.quantity + amount : product.quantity - amount
-  const tooMany = type === 'STOCK_OUT' && amount > product.quantity
-
-  async function submit(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault()
-    setError('')
-    if (amount < 1) { setError('Enter a quantity of at least 1.'); return }
-    if (tooMany) { setError(`Only ${product.quantity} unit(s) in stock.`); return }
-    setSaving(true)
-    try {
-      const updated = await sellerProductsApi.recordInventoryMovement(product.id, { quantity: amount, reason, type })
-      await onRecorded(updated, type)
-    } catch (cause) {
-      setError(errorMessage(cause))
-      setSaving(false)
-    }
-  }
-
+  const variant = variants.find((item) => item.id === target)
   return (
-    <Modal
-      footer={<>
-        <button className="seller-outline-button" disabled={saving} onClick={onClose} type="button">Cancel</button>
-        <button className="seller-primary-button" disabled={saving || tooMany} form="record-movement-form" type="submit">
-          {saving ? 'Recording…' : 'Record movement'}
-        </button>
-      </>}
-      onClose={onClose}
-      subtitle={`${product.name} · ${product.quantity} unit(s) on hand`}
-      title="Record stock movement"
-    >
-      <form className="space-y-4" id="record-movement-form" onSubmit={submit}>
-        <div>
-          <span className="seller-field-label" id="movement-type-label">Movement</span>
+    <form className="space-y-4" onSubmit={(event) => onSubmit(event, type)}>
+      <div className="space-y-1.5">
+        <Field label="Variant">
           <Select
-            aria-labelledby="movement-type-label"
-            onChange={(value) => { setType(value as InventoryMovementType); setError('') }}
-            options={TYPES.map((item) => ({ hint: item.hint, label: item.label, value: item.value }))}
-            searchThreshold={99}
-            value={type}
+            onChange={onTargetChange}
+            options={variants.map((item) => ({ hint: item.sku, label: variantLabel(item), value: item.id }))}
+            value={target}
+            variant="bare"
           />
-        </div>
-
-        <label className="block">
-          <span className="seller-field-label">Quantity</span>
-          <input
-            autoFocus
-            className="seller-plain-input"
-            inputMode="numeric"
-            onChange={(event) => { setQuantity(event.target.value.replace(/\D/g, '')); setError('') }}
-            placeholder="0"
-            required
-            value={quantity}
-          />
-        </label>
-
-        <label className="block">
-          <span className="seller-field-label">Reason</span>
-          <input
-            className="seller-plain-input"
-            maxLength={160}
-            onChange={(event) => setReason(event.target.value)}
-            placeholder={type === 'STOCK_IN' ? 'e.g. Delivery from supplier' : 'e.g. Damaged in transit'}
-            required
-            value={reason}
-          />
-        </label>
-
-        <p className="rounded-xl border border-line bg-soft/50 px-3.5 py-2.5 text-[11px] text-muted">
-          {quantity
-            ? tooMany
-              ? <span className="font-bold text-red-600">Only {product.quantity} unit(s) available to remove.</span>
-              : <>Stock will go from <strong className="text-ink">{product.quantity}</strong> to <strong className="text-ink">{Math.max(0, projected)}</strong> unit(s).</>
-            : 'Enter a quantity to preview the new stock level.'}
-        </p>
-
-        <Feedback error={error} />
-      </form>
-    </Modal>
+        </Field>
+        {variant && (
+          <p className="text-[11px] leading-5 text-muted">
+            On hand <strong className="text-xs font-bold text-ink">{variant.stockQuantity}</strong>
+          </p>
+        )}
+      </div>
+      <Field label="Movement type">
+        <Select
+          onChange={(value) => setType(value as InventoryMovementType)}
+          options={TYPES}
+          value={type}
+          variant="bare"
+        />
+      </Field>
+      <Field label="Units">
+        <input min="1" name="quantity" required step="1" type="number" />
+      </Field>
+      <Field label="Reason">
+        <input name="reason" placeholder="e.g. Supplier delivery" required />
+      </Field>
+      <Button block className="mt-1" type="submit">
+        Record movement
+      </Button>
+    </form>
   )
-}
-
-function MovementBadge({ type }: { type: InventoryMovementType }) {
-  const isIn = type === 'STOCK_IN'
-  return (
-    <span className={`inline-flex items-center gap-1 whitespace-nowrap rounded-full border px-2 py-1 text-[9px] font-bold ${isIn ? 'border-green-200 bg-green-50 text-green-700' : 'border-red-200 bg-red-50 text-red-600'}`}>
-      {isIn ? <ArrowUpRight size={11} /> : <ArrowDownLeft size={11} />} {LABELS[type]}
-    </span>
-  )
-}
-
-function Change({ value }: { value: number }) {
-  const isIn = value > 0
-  return <strong className={isIn ? 'text-green-700' : 'text-red-600'}>{isIn ? `+${value}` : value}</strong>
-}
-
-const formatMoment = (value: string) => {
-  const date = new Date(value)
-  return `${date.toLocaleDateString(undefined, { day: 'numeric', month: 'short', year: 'numeric' })}, ${date.toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit' })}`
 }

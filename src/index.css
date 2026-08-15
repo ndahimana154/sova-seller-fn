@@ -1,289 +1,170 @@
 @import "tailwindcss";
 
 @theme {
-  --color-primary: #f18f01;
-  --color-primary-dark: #c96f00;
-  --color-primary-light: #fff4df;
+  --color-primary: #171a1f;
+  --color-primary-dark: #000000;
+  --color-primary-light: #f2f3f5;
+  --color-accent: #f18f01;
+  --color-accent-dark: #c96f00;
+  --color-accent-light: #fff4df;
   --color-ink: #171a1f;
   --color-muted: #6f737a;
+  --color-faint: #9ba1a8;
   --color-soft: #f5f6f7;
+  --color-canvas: #fafbfc;
   --color-line: #e8e9eb;
+
+  --font-sans: Avenir, "Avenir Next", "Nunito Sans", system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  --font-rubik: var(--font-sans);
+  --font-avenir: var(--font-sans);
+
   --shadow-soft: 0 12px 32px rgb(23 26 31 / 8%);
+  --shadow-card: 0 10px 30px rgb(23 26 31 / 4%);
+
+  --spacing-18: 4.5rem;
+  --spacing-22: 5.5rem;
+
+  --radius-panel: 1.75rem;
+
+  --animate-reveal: reveal 160ms ease-out;
+  --animate-fade-in: fade-in 160ms ease-out;
+  --animate-rise: rise 200ms cubic-bezier(.22, 1, .36, 1);
+  --animate-pop: pop 130ms ease-out;
 }
 
 @layer base {
-  * { box-sizing: border-box; }
-  html { scroll-behavior: smooth; font-family: "Inter", system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; }
-  body { margin: 0; min-width: 320px; background: white; }
-  button, input { font: inherit; }
-  button, a { -webkit-tap-highlight-color: transparent; }
-  button { cursor: pointer; }
-  a { text-decoration: none; color: inherit; }
-  :focus-visible { outline: 3px solid rgb(241 143 1 / 25%); outline-offset: 2px; }
+  * {
+    box-sizing: border-box;
+  }
+
+  html {
+    scroll-behavior: smooth;
+    font-family: var(--font-sans);
+  }
+
+  body {
+    margin: 0;
+    min-width: 320px;
+    background: white;
+  }
+
+  button,
+  input {
+    font: inherit;
+  }
+
+  button,
+  a {
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  button {
+    cursor: pointer;
+  }
+
+  a {
+    text-decoration: none;
+    color: inherit;
+  }
+
+  :focus-visible {
+    outline: 3px solid rgb(23 26 31 / 18%);
+    outline-offset: 2px;
+  }
 }
 
 @layer components {
-  .page-container { @apply mx-auto w-full max-w-[1320px] px-4 sm:px-6 lg:px-8; }
-  .section-space { @apply py-10 sm:py-14; }
-  .icon-control { @apply grid size-10 shrink-0 place-items-center rounded-full text-ink transition hover:bg-soft; }
-  .header-location { @apply hidden items-center gap-2 rounded-full px-3 py-2 text-left text-ink transition hover:bg-soft xl:flex; }
-  .header-location small { @apply block text-[9px] leading-none text-muted; }
-  .header-location strong { @apply mt-1 block text-[11px] leading-none; }
-  .header-login-link { @apply whitespace-nowrap rounded-full px-2 py-2 text-[11px] font-bold text-ink transition hover:bg-soft sm:px-3 sm:text-xs; }
-  .header-signup-link { @apply inline-flex items-center gap-1.5 whitespace-nowrap rounded-full bg-primary px-3 py-2 text-[11px] font-bold text-white transition hover:bg-primary-dark sm:px-4 sm:text-xs; }
-  .brand-mark { @apply relative block size-8 overflow-hidden rounded-lg bg-primary; }
-  .brand-mark i:first-child { @apply absolute -right-2 top-1/2 size-6 -translate-y-1/2 rounded-full bg-white; }
-  .brand-mark i:last-child { @apply absolute right-0 top-1/2 size-2.5 -translate-y-1/2 rounded-l-full bg-primary; }
-  .hero-panel { @apply relative overflow-hidden rounded-[28px] border border-primary/10 bg-primary-light; }
-  .video-pin-grid { column-count: 2; column-gap: .75rem; }
-  .video-pin { transform: translateZ(0); }
-  .primary-button { @apply inline-flex items-center justify-center gap-2 rounded-full bg-ink px-5 py-3 text-xs font-bold text-white transition hover:-translate-y-0.5 hover:bg-primary-dark; }
-  .secondary-button { @apply inline-flex items-center justify-center rounded-full border border-ink/15 bg-white/75 px-5 py-3 text-xs font-bold text-ink transition hover:border-primary hover:text-primary-dark; }
-  .category-card { @apply flex min-w-0 flex-col items-center rounded-2xl p-2 transition hover:bg-soft; }
-  .product-card { @apply min-w-0; }
-  .quick-add { @apply items-center justify-center gap-2 rounded-full bg-ink px-4 py-2.5 text-xs font-bold text-white transition duration-300 hover:bg-primary-dark; }
-  .quick-add-touch { @apply mt-3 flex w-full; }
-  .quick-add-desktop { @apply hidden; }
-  .auth-page { @apply relative grid h-dvh place-items-center overflow-hidden bg-[#fbf3e8] px-4 py-3 sm:px-8 sm:py-5; }
-  .auth-page::before { content: ""; @apply pointer-events-none absolute -left-32 -top-32 size-96 rounded-full bg-primary/10 blur-3xl; }
-  .auth-page::after { content: ""; @apply pointer-events-none absolute -bottom-40 -right-24 size-[30rem] rounded-full bg-white/70 blur-3xl; }
-  .auth-shell { @apply relative z-10 grid max-h-full w-full max-w-[1120px] overflow-hidden rounded-[28px] border border-white/80 bg-white shadow-[0_30px_90px_rgba(84,54,27,0.16)] lg:h-[min(610px,calc(100dvh-2.5rem))] lg:grid-cols-[minmax(0,0.94fr)_minmax(420px,1.06fr)]; }
-  .auth-form-panel { @apply flex min-h-0 items-center overflow-hidden bg-white px-6 py-6 sm:px-10 lg:h-full lg:px-14; }
-  .auth-form-wrap { @apply mx-auto w-full max-w-[430px]; }
-  .auth-eyebrow { @apply text-[10px] font-black uppercase tracking-[0.2em] text-primary-dark; }
-  .auth-tabs { @apply mt-4 grid grid-cols-2 rounded-xl bg-soft p-1; }
-  .auth-tabs button { @apply rounded-lg px-4 py-2 text-xs font-bold text-muted transition; }
-  .auth-tabs button[aria-selected="true"] { @apply bg-white text-ink shadow-sm; }
-  .auth-input { @apply flex min-h-10 items-center gap-3 rounded-xl border border-line bg-white px-3.5 transition focus-within:border-primary focus-within:ring-4 focus-within:ring-primary/10; }
-  .auth-input input { @apply min-w-0 flex-1 bg-transparent py-2.5 text-xs text-ink outline-none placeholder:text-muted/65; }
-  .auth-password-toggle { @apply -mr-2 grid size-9 shrink-0 place-items-center rounded-lg text-muted transition hover:bg-soft hover:text-ink; }
-  .auth-checkbox { @apply size-4 rounded border-line accent-primary; }
-  .auth-submit { @apply flex min-h-10 w-full items-center justify-center rounded-xl bg-primary px-5 text-xs font-black text-white shadow-[0_10px_24px_rgba(241,143,1,0.22)] transition hover:-translate-y-0.5 hover:bg-primary-dark disabled:pointer-events-none disabled:opacity-65; }
-  .auth-divider { @apply my-4 flex items-center gap-3 text-[9px] font-bold uppercase tracking-[0.12em] text-muted; }
-  .auth-divider::before, .auth-divider::after { content: ""; @apply h-px flex-1 bg-line; }
-  .auth-google { @apply flex min-h-10 w-full items-center justify-center gap-3 rounded-xl border border-line bg-white text-xs font-bold text-ink transition hover:border-ink/20 hover:bg-soft; }
-  .review-input { @apply mt-2 block w-full rounded-xl border border-line bg-white px-4 py-3 text-sm text-ink outline-none transition placeholder:text-muted/65 focus:border-primary focus:ring-4 focus:ring-primary/10; }
-  .seller-input { @apply mt-2 flex min-h-11 items-center gap-2 rounded-xl border border-line bg-white px-3.5 transition focus-within:border-primary focus-within:ring-4 focus-within:ring-primary/10; }
-  .seller-input input, .seller-input select, .seller-input textarea { @apply min-w-0 flex-1 bg-transparent py-3 text-sm text-ink outline-none placeholder:text-muted/65 disabled:cursor-not-allowed disabled:text-muted; }
-  .auth-visual { @apply relative hidden h-full min-h-0 overflow-hidden bg-[#ca7b24] lg:block; background-image: url("/images/storefront-hero.png"); background-position: 68% center; background-size: cover; }
-  .auth-visual-shade { @apply absolute inset-0 bg-gradient-to-t from-[#2d1709]/80 via-[#5a2a09]/10 to-transparent; }
-  .auth-visual-copy { @apply absolute bottom-0 left-0 right-0 p-12; }
-}
-
-@media (min-width: 640px) {
-  .video-pin-grid { column-count: 3; column-gap: 1rem; }
-}
-
-@media (min-width: 900px) {
-  .video-pin-grid { column-count: 4; }
-}
-
-@media (min-width: 1280px) {
-  .video-pin-grid { column-count: 5; }
-}
-
-@media (max-width: 640px) {
-  .hero-panel img { object-position: 65% center; opacity: .5; }
-}
-
-@media (hover: hover) and (pointer: fine) {
-  .quick-add-touch {
-    display: none;
+  /* Kept in CSS: these need pseudo-elements, a background image, or a media
+     query that utilities on the element cannot express. Everything else now
+     lives as Tailwind classes on the markup. */
+  .auth-page {
+    @apply relative grid h-dvh place-items-center overflow-hidden bg-canvas px-4 py-3 sm:px-8 sm:py-5;
   }
 
-  .quick-add-desktop {
-    display: flex;
-    position: absolute;
-    right: .75rem;
-    bottom: .75rem;
-    left: .75rem;
-    transform: translateY(3.5rem);
+  .auth-page::before {
+    content: "";
+    @apply pointer-events-none absolute -left-32 -top-32 size-96 rounded-full bg-ink/5 blur-3xl;
+  }
+
+  .auth-page::after {
+    content: "";
+    @apply pointer-events-none absolute -bottom-40 -right-24 size-[30rem] rounded-full bg-white/70 blur-3xl;
+  }
+
+  .auth-shell {
+    @apply relative z-10 grid max-h-full w-full max-w-[1120px] overflow-hidden rounded-panel border border-line bg-white;
+    box-shadow: 0 30px 90px rgb(23 26 31 / 14%);
+  }
+
+  @media (min-width: 1024px) {
+    .auth-shell {
+      height: min(610px, calc(100dvh - 2.5rem));
+      grid-template-columns: minmax(0, 0.94fr) minmax(420px, 1.06fr);
+    }
+  }
+
+  .auth-visual {
+    @apply relative hidden h-full min-h-0 overflow-hidden bg-ink lg:block;
+    background-image: url("/images/storefront-hero.png");
+    background-position: 68% center;
+    background-size: cover;
+  }
+
+  .brand-mark {
+    @apply relative block size-8 overflow-hidden rounded-lg bg-accent;
+  }
+
+  .brand-mark i:first-child {
+    @apply absolute -right-2 top-1/2 size-6 -translate-y-1/2 rounded-full bg-white;
+  }
+
+  .brand-mark i:last-child {
+    @apply absolute right-0 top-1/2 size-2.5 -translate-y-1/2 rounded-l-full bg-accent;
+  }
+}
+
+@keyframes reveal {
+  from {
+    opacity: 0;
+    transform: translateY(-4px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes fade-in {
+  from {
     opacity: 0;
   }
 
-  .product-card:hover .quick-add-desktop,
-  .product-card:focus-within .quick-add-desktop {
-    transform: translateY(0);
+  to {
     opacity: 1;
   }
 }
 
-@layer components {
-  .seller-workspace {
-    @apply min-h-screen bg-soft/70 text-ink;
-    font-size: 15px;
-  }
-  .seller-sidebar {
-    @apply fixed inset-y-0 left-0 z-40 flex w-60 -translate-x-full flex-col border-r border-primary/10 bg-white shadow-[8px_0_30px_rgb(23_26_31/0.04)] transition-[width,transform] lg:translate-x-0;
-  }
-  .seller-sidebar-collapsed { @apply lg:w-14; }
-  .seller-topbar {
-    @apply sticky top-0 z-20 flex h-16 items-center border-b border-line bg-white/95 px-4 backdrop-blur transition-[margin] lg:ml-60 lg:px-6;
-  }
-  .seller-topbar-collapsed { @apply lg:ml-14; }
-  .seller-content { @apply transition-[margin] lg:ml-60; }
-  .seller-content-collapsed { @apply lg:ml-14; }
-  .seller-icon-button {
-    @apply grid size-8 shrink-0 place-items-center rounded-full border border-line bg-white text-muted transition-colors hover:border-primary/30 hover:bg-primary-light hover:text-primary-dark;
-  }
-  .seller-user-menu {
-    @apply flex items-center gap-2 rounded-full border border-line bg-white px-1.5 py-1 transition-colors hover:bg-soft;
-  }
-  .seller-nav-group { @apply mb-3; }
-  .seller-nav-group-trigger {
-    @apply mb-1 flex w-full items-center justify-between px-2.5 py-1 text-[9px] font-semibold uppercase tracking-[0.12em] text-[#a69c92];
-  }
-  .seller-nav-item {
-    @apply flex w-full items-center gap-2.5 rounded-xl px-3 py-2.5 text-xs font-semibold text-muted transition-colors hover:bg-soft hover:text-ink;
-  }
-  .seller-nav-item-active { @apply bg-[#fff6e8] font-semibold text-[#c96f00]; }
-  .seller-nav-children {
-    @apply relative ml-[17px] border-l border-[#eee7de] pl-2.5;
-  }
-  .seller-nav-children .seller-nav-item { @apply py-1.5 text-[11px]; }
-  .seller-signout {
-    @apply flex w-full items-center gap-2.5 rounded-md px-2.5 py-2 text-xs font-medium text-[#6f665d] transition-colors hover:bg-[#fffaf3] hover:text-[#c96f00];
-  }
-  .seller-sidebar-collapsed .seller-sidebar-label { @apply lg:hidden; }
-  .seller-sidebar-collapsed .seller-nav-item,
-  .seller-sidebar-collapsed .seller-signout { @apply lg:justify-center lg:px-0; }
-  .seller-sidebar-collapsed .seller-nav-group-trigger {
-    @apply lg:mx-auto lg:mb-1.5 lg:h-px lg:w-6 lg:bg-[#eee7de] lg:p-0;
-  }
-  .seller-sidebar .brand-mark { border-radius: .375rem; }
-  .seller-primary-button {
-    @apply inline-flex min-h-9 items-center justify-center gap-1.5 rounded-full bg-primary px-4 text-xs font-bold text-white shadow-[0_7px_18px_rgb(241_143_1/0.16)] transition hover:bg-primary-dark disabled:cursor-not-allowed disabled:opacity-60;
-  }
-  .seller-outline-button {
-    @apply inline-flex min-h-9 items-center justify-center gap-1.5 rounded-full border border-line bg-white px-4 text-xs font-bold text-muted transition hover:border-primary/30 hover:bg-primary-light hover:text-primary-dark disabled:opacity-60;
-  }
-  .seller-danger-button {
-    @apply inline-flex min-h-8 items-center justify-center gap-1.5 rounded-md border border-red-200 bg-white px-3 text-xs font-semibold text-red-600 hover:bg-red-50 disabled:opacity-60;
-  }
-  .seller-small-button { @apply rounded-md border border-[#eee7de] px-2 py-1.5 text-[10px] font-semibold hover:bg-[#fffaf3]; }
-  .seller-panel { @apply rounded-2xl border border-line bg-white p-5 shadow-[0_10px_30px_rgb(23_26_31/0.04)]; }
-  .seller-filter-input { @apply flex h-8 items-center gap-2 rounded-md border border-[#eee7de] px-2.5 text-[#a69c92]; }
-  .seller-filter-input input { @apply min-w-0 flex-1 bg-transparent text-xs text-[#241f1a] outline-none; }
-  .seller-filter-select { @apply h-8 rounded-md border border-[#eee7de] bg-white px-2.5 text-xs text-[#6f665d] outline-none; }
-  .seller-table-toolbar { @apply flex flex-col gap-2 border-b border-[#eee7de] bg-white p-2.5 sm:flex-row sm:items-center; }
-  .seller-table-filter-panel {
-    @apply flex flex-col gap-3 border-b border-[#eee7de] bg-[#fffaf3] p-3 sm:flex-row sm:items-end;
-    animation: seller-filter-reveal 160ms ease-out;
-  }
-  .seller-data-table { @apply w-full border-collapse text-left text-xs; }
-  .seller-data-table thead { @apply border-b border-[#eee7de] bg-[#fffaf3] text-[#6f665d]; }
-  .seller-data-table th { @apply whitespace-nowrap px-3.5 py-2.5 text-[11px] font-semibold; }
-  .seller-data-table td { @apply whitespace-nowrap border-b border-[#eee7de] px-3.5 py-2.5 text-[#6f665d]; }
-  .seller-data-table tbody tr { @apply transition-colors last:[&>td]:border-b-0 hover:bg-[#fffaf3]; }
-  .seller-form-control { @apply flex min-h-10 items-center rounded-xl border border-line bg-white px-3 focus-within:border-primary focus-within:ring-4 focus-within:ring-primary/10; }
-  .seller-form-control input,
-  .seller-form-control select,
-  .seller-form-control textarea { @apply min-w-0 flex-1 bg-transparent py-2 text-xs text-[#241f1a] outline-none; }
-  .seller-plain-input { @apply block h-10 w-full rounded-xl border border-line bg-white px-3 text-xs outline-none focus:border-primary focus:ring-4 focus:ring-primary/10; }
-  .seller-default-badge { @apply inline-flex items-center gap-1 rounded-full border border-primary bg-[#fff6e8] px-2 py-1 text-[9px] font-bold text-[#c96f00]; }
-
-  /* Overlay surfaces — one backdrop treatment for modals, drawers and lightboxes. */
-  .overlay-backdrop {
-    @apply fixed inset-0 bg-[#241f1a]/45 backdrop-blur-sm;
-    animation: overlay-fade 160ms ease-out;
-  }
-  .overlay-panel { animation: overlay-rise 200ms cubic-bezier(.22, 1, .36, 1); }
-  .drawer-panel { animation: drawer-slide 220ms cubic-bezier(.22, 1, .36, 1); }
-  .seller-modal-backdrop {
-    @apply fixed inset-0 z-50 grid place-items-center bg-[#241f1a]/45 p-4 backdrop-blur-sm;
-    animation: overlay-fade 160ms ease-out;
-  }
-  .seller-modal {
-    @apply max-h-[90vh] w-full max-w-5xl overflow-y-auto rounded-2xl border border-line bg-white p-5 shadow-[0_30px_80px_rgb(23_26_31/0.22)];
-    animation: overlay-rise 200ms cubic-bezier(.22, 1, .36, 1);
+@keyframes rise {
+  from {
+    opacity: 0;
+    transform: translateY(10px) scale(.985);
   }
 
-  /* Surfaces */
-  .seller-card { @apply rounded-2xl border border-line bg-white shadow-[0_10px_30px_rgb(23_26_31/0.04)]; }
-  .seller-subcard { @apply rounded-xl border border-line bg-white; }
-  .seller-stat-tile { @apply rounded-xl border border-line bg-[#fffaf3] px-3.5 py-3; }
-  .seller-stat-tile dt { @apply text-[10px] font-semibold uppercase tracking-[0.08em] text-muted; }
-  .seller-stat-tile dd { @apply mt-1 text-sm font-bold text-ink; }
-  .seller-field-label { @apply mb-1.5 block text-[11px] font-semibold text-muted; }
-  .seller-legend { @apply text-[11px] font-semibold text-muted; }
-  .seller-legend-hint { @apply mt-1 text-[10px] text-muted; }
-
-  /* Media picker + gallery */
-  .seller-dropzone {
-    @apply flex cursor-pointer flex-col items-center justify-center gap-1.5 rounded-2xl border-2 border-dashed border-line bg-soft/40 px-5 py-7 text-center transition;
-    @apply hover:border-primary/45 hover:bg-primary-light/50;
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
   }
-  .seller-dropzone-active { @apply border-primary bg-primary-light; }
-  .seller-media-tile { @apply relative aspect-square overflow-hidden rounded-xl border border-line bg-soft; }
-  .seller-media-tile-cover { @apply border-primary ring-2 ring-primary/25; }
-  .seller-media-tile img, .seller-media-tile video { @apply size-full object-cover; }
-  .seller-media-overlay {
-    @apply absolute inset-x-0 bottom-0 flex items-center justify-end gap-1 bg-gradient-to-t from-[#241f1a]/80 to-transparent p-1.5 opacity-0 transition;
-    @apply group-hover:opacity-100 group-focus-within:opacity-100;
-  }
-  .seller-media-action { @apply grid size-7 place-items-center rounded-full bg-white/95 text-ink transition hover:bg-white hover:text-primary-dark; }
-  .seller-media-badge { @apply absolute left-1.5 top-1.5 inline-flex items-center gap-1 rounded-full bg-primary px-2 py-0.5 text-[9px] font-bold text-white shadow-sm; }
-  .seller-media-caption { @apply mt-1.5 block truncate text-[10px] text-muted; }
-  .seller-gallery-stage { @apply grid aspect-[4/3] place-items-center overflow-hidden rounded-2xl border border-line bg-soft; }
-  .seller-gallery-thumb { @apply size-16 shrink-0 overflow-hidden rounded-lg border border-line bg-soft transition hover:border-primary/50; }
-  .seller-gallery-thumb-active { @apply border-primary ring-2 ring-primary/25; }
-
-  /* Select: the mirrored native control stays in the layout (so focusing an
-     invalid field scrolls to the right place) but is invisible and untouchable. */
-  .sr-only-field {
-    @apply pointer-events-none absolute inset-0 size-full opacity-0;
-    appearance: none;
-  }
-  .select-popup { animation: select-pop 130ms ease-out; }
-
-  .global-table { @apply overflow-hidden rounded-xl border border-line bg-white; }
-  .global-table-scroll { @apply overflow-x-auto; }
-  .global-table-empty { @apply px-4 py-12 text-center text-xs text-muted; }
-  .global-table-toolbar { @apply flex flex-col gap-2 border-b border-line bg-white p-2.5 sm:flex-row sm:items-center; }
-  .global-table-filter-panel {
-    @apply border-b border-line bg-[#fffaf3] p-3;
-    animation: seller-filter-reveal 160ms ease-out;
-  }
-  .global-data-table { @apply w-full border-collapse text-left text-xs; }
-  .global-data-table thead { @apply border-b border-line bg-[#fffaf3] text-muted; }
-  .global-data-table th { @apply whitespace-nowrap px-3.5 py-2.5 text-[11px] font-semibold; }
-  .global-data-table td { @apply whitespace-nowrap border-b border-line px-3.5 py-2.5 text-muted; }
-  .global-data-table tbody tr { @apply bg-white transition-colors last:[&>td]:border-b-0 hover:bg-[#fffaf3]; }
 }
 
-@keyframes seller-filter-reveal {
-  from { opacity: 0; transform: translateY(-4px); }
-  to { opacity: 1; transform: translateY(0); }
-}
+@keyframes pop {
+  from {
+    opacity: 0;
+    transform: translateY(-4px) scale(.99);
+  }
 
-@keyframes overlay-fade {
-  from { opacity: 0; }
-  to { opacity: 1; }
-}
-
-@keyframes overlay-rise {
-  from { opacity: 0; transform: translateY(10px) scale(.985); }
-  to { opacity: 1; transform: translateY(0) scale(1); }
-}
-
-@keyframes select-pop {
-  from { opacity: 0; transform: translateY(-4px) scale(.99); }
-  to { opacity: 1; transform: translateY(0) scale(1); }
-}
-
-/* Touch devices never hover — keep the media controls permanently reachable. */
-@media (hover: none) {
-  .seller-media-overlay { opacity: 1; }
-}
-
-@keyframes drawer-slide {
-  from { transform: translateX(16px); opacity: 0; }
-  to { transform: translateX(0); opacity: 1; }
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .overlay-backdrop,
-  .overlay-panel,
-  .drawer-panel,
-  .global-table-filter-panel { animation: none; }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
 }

@@ -1,7 +1,7 @@
 import { useEffect } from 'react'
 import { Navigate, useLocation } from 'react-router-dom'
 import { PublicLayout } from './components/home/PublicLayout'
-import { env } from './config/env'
+import { Toaster } from './components/ui/Toaster'
 import { useAuthActions } from './hooks/useAuthActions'
 import { isSeller, loadClientSession } from './lib/sellerAuth'
 import { AuthPage } from './pages/auth/AuthPage'
@@ -18,7 +18,6 @@ export default function App() {
   const dispatch = useAppDispatch()
   const location = useLocation()
   const session = useAppSelector((state) => state.auth.session)
-  const toast = useAppSelector((state) => state.ui.toast)
   const { authenticateWithOtp, authenticateWithPassword, completePasswordChange, logout } = useAuthActions()
 
   useEffect(() => {
@@ -55,20 +54,12 @@ export default function App() {
         }
         dashboardLayout={
           seller && !locked
-            ? <SellerDashboardPage
-              onLogout={() => void logout()}
-              onStorefrontOpen={() => { window.location.href = env.storefrontUrl }}
-              user={seller.user}
-            />
+            ? <SellerDashboardPage onLogout={() => void logout()} user={seller.user} />
             : <Navigate replace to={locked ? appPaths.changePassword : appPaths.login} />
         }
         home={<SellerHomePage dashboardHref={seller && !locked ? appPaths.dashboard : undefined} />}
       />
-      {toast && (
-        <div className="fixed bottom-5 left-1/2 z-[70] -translate-x-1/2 rounded-full bg-ink px-5 py-3 text-xs font-bold text-white shadow-xl">
-          {toast}
-        </div>
-      )}
+      <Toaster />
     </>
   )
 }

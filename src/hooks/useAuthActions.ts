@@ -9,16 +9,14 @@ import {
 import { appPaths } from '../router/paths'
 import { clearSession, setSession } from '../store/authSlice'
 import { useAppDispatch } from '../store/hooks'
-import { setToast } from '../store/uiSlice'
+import { useToast } from './useToast'
 
 export function useAuthActions() {
   const dispatch = useAppDispatch()
   const navigate = useNavigate()
 
-  const notify = useCallback((text: string) => {
-    dispatch(setToast(text))
-    window.setTimeout(() => dispatch(setToast('')), 1800)
-  }, [dispatch])
+  const toast = useToast()
+  const notify = useCallback((text: string) => toast.success(text), [toast])
 
   const startSession = useCallback((session: ClientSession) => {
     dispatch(setSession(session))

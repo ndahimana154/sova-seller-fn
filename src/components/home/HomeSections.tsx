@@ -10,6 +10,7 @@ import {
   Store,
   UserCheck,
 } from 'lucide-react'
+import { Card, SectionHeading } from '../ui'
 
 const benefits = [
   {
@@ -73,19 +74,19 @@ const faqs = [
 
 export function HomeBenefits() {
   return (
-    <section className="page-container section-space" id="why">
+    <section className="mx-auto w-full max-w-[1320px] px-4 sm:px-6 lg:px-8 py-12 sm:py-18" id="why">
       <SectionHeading
         eyebrow="Why sell on SOVA"
         title="Built for shops that want to be found"
         lead="The seller portal is where your shop lives: your profile, your catalogue, your stock."
       />
-      <div className="mt-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+      <div className="mt-10 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
         {benefits.map((item) => (
-          <article className="rounded-2xl border border-line bg-white p-5 transition hover:-translate-y-0.5 hover:border-primary/30" key={item.title}>
-            <span className="grid size-10 place-items-center rounded-full bg-primary-light text-primary-dark"><item.icon size={18} /></span>
+          <Card hover key={item.title}>
+            <span className="grid size-10 shrink-0 place-items-center rounded-full bg-soft text-ink"><item.icon size={18} /></span>
             <h3 className="mt-4 text-sm font-black tracking-[-0.02em] text-ink">{item.title}</h3>
             <p className="mt-2 text-xs leading-5 text-muted">{item.body}</p>
-          </article>
+          </Card>
         ))}
       </div>
     </section>
@@ -94,18 +95,18 @@ export function HomeBenefits() {
 
 export function HomeSteps() {
   return (
-    <section className="bg-soft/70" id="how">
-      <div className="page-container section-space">
+    <section className="bg-soft/60" id="how">
+      <div className="mx-auto w-full max-w-[1320px] px-4 sm:px-6 lg:px-8 py-12 sm:py-18">
         <SectionHeading
           eyebrow="How it works"
           title="From application to first product"
           lead="Four steps, and you can follow every one of them by email or with your application code."
         />
-        <ol className="mt-8 grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+        <ol className="mt-10 grid gap-4 md:grid-cols-2 lg:grid-cols-4">
           {steps.map((step, index) => (
             <li className="relative rounded-2xl border border-line bg-white p-5" key={step.title}>
-              <span className="absolute right-4 top-4 text-2xl font-black text-primary/15">{index + 1}</span>
-              <span className="grid size-10 place-items-center rounded-full bg-ink text-white"><step.icon size={17} /></span>
+              <span className="absolute right-4 top-4 text-2xl font-black text-ink/10">{index + 1}</span>
+              <span className="grid size-10 shrink-0 place-items-center rounded-full bg-ink text-white"><step.icon size={17} /></span>
               <h3 className="mt-4 text-sm font-black tracking-[-0.02em] text-ink">{step.title}</h3>
               <p className="mt-2 text-xs leading-5 text-muted">{step.body}</p>
             </li>
@@ -118,18 +119,18 @@ export function HomeSteps() {
 
 export function HomeRequirements() {
   return (
-    <section className="page-container section-space" id="requirements">
-      <div className="grid gap-8 lg:grid-cols-[minmax(0,0.9fr)_minmax(0,1.1fr)]">
+    <section className="mx-auto w-full max-w-[1320px] px-4 sm:px-6 lg:px-8 py-12 sm:py-18" id="requirements">
+      <div className="grid gap-10 lg:grid-cols-[minmax(0,0.9fr)_minmax(0,1.1fr)]">
         <SectionHeading
           align="left"
           eyebrow="What you need"
           title="Have these ready before you apply"
           lead="The application takes a few minutes when the documents are at hand."
         />
-        <ul className="space-y-3">
+        <ul className="[&>*+*]:mt-3">
           {requirements.map((item) => (
             <li className="flex items-start gap-3 rounded-2xl border border-line bg-white p-4" key={item.label}>
-              <span className="grid size-9 shrink-0 place-items-center rounded-full bg-primary-light text-primary-dark"><item.icon size={16} /></span>
+              <span className="grid size-9 shrink-0 place-items-center rounded-full bg-soft text-ink"><item.icon size={16} /></span>
               <span className="min-w-0">
                 <strong className="block text-xs font-black text-ink">{item.label}</strong>
                 <span className="mt-1 block text-[11px] leading-5 text-muted">{item.detail}</span>
@@ -144,15 +145,15 @@ export function HomeRequirements() {
 
 export function HomeFaq() {
   return (
-    <section className="bg-soft/70" id="faq">
-      <div className="page-container section-space">
+    <section className="bg-soft/60" id="faq">
+      <div className="mx-auto w-full max-w-[1320px] px-4 sm:px-6 lg:px-8 py-12 sm:py-18">
         <SectionHeading eyebrow="FAQ" title="Questions sellers ask us" />
-        <div className="mx-auto mt-8 max-w-3xl space-y-3">
+        <div className="mx-auto mt-10 max-w-3xl [&>*+*]:mt-3">
           {faqs.map((faq) => (
-            <details className="group rounded-2xl border border-line bg-white p-4 [&_summary::-webkit-details-marker]:hidden" key={faq.question}>
+            <details className="group rounded-2xl border border-line bg-white p-4 transition hover:border-ink/20 [&_summary::-webkit-details-marker]:hidden" key={faq.question}>
               <summary className="flex cursor-pointer items-center justify-between gap-4 text-xs font-black text-ink">
                 {faq.question}
-                <span className="text-lg font-black text-primary-dark transition group-open:rotate-45">+</span>
+                <span className="text-lg font-black text-muted transition group-open:rotate-45">+</span>
               </summary>
               <p className="mt-3 text-xs leading-6 text-muted">{faq.answer}</p>
             </details>
@@ -160,20 +161,5 @@ export function HomeFaq() {
         </div>
       </div>
     </section>
-  )
-}
-
-function SectionHeading({ align = 'center', eyebrow, lead, title }: {
-  align?: 'center' | 'left'
-  eyebrow: string
-  lead?: string
-  title: string
-}) {
-  return (
-    <div className={align === 'center' ? 'mx-auto max-w-2xl text-center' : 'max-w-md'}>
-      <p className="auth-eyebrow">{eyebrow}</p>
-      <h2 className="mt-2 text-2xl font-black tracking-[-0.04em] text-ink sm:text-3xl">{title}</h2>
-      {lead && <p className="mt-3 text-sm leading-6 text-muted">{lead}</p>}
-    </div>
   )
 }

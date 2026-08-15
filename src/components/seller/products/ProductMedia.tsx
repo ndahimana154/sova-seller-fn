@@ -2,10 +2,10 @@ import { ImageIcon, Play, Star, Trash2, Upload, X } from 'lucide-react'
 import { useEffect, useRef, useState, type DragEvent } from 'react'
 import { mediaUrl } from './ProductPageUi'
 import type { ProductMedia } from '../../../lib/sellerProductsApi'
+import { ui } from '../../ui/styles'
 
 const MEDIA_ACCEPT = 'image/*,video/*'
 
-/** A file chosen in the browser but not uploaded yet. */
 export interface MediaDraft {
   file: File
   id: string
@@ -28,7 +28,6 @@ function formatBytes(bytes: number) {
 
 const isVideoFile = (file: File) => file.type.startsWith('video/')
 
-/** Multi-file picker with previews. Files append rather than replace; the first is the cover. */
 export function ProductMediaPicker({ drafts, hint, label = 'Product media', onChange }: {
   drafts: MediaDraft[]
   hint?: string
@@ -58,11 +57,11 @@ export function ProductMediaPicker({ drafts, hint, label = 'Product media', onCh
     >
       <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
         <div>
-          <h3 className="seller-legend">{label}</h3>
-          <p className="seller-legend-hint">{hint ?? 'The first file becomes the cover image. Drag files anywhere in this area.'}</p>
+          <h3 className="text-[11px] font-semibold text-muted">{label}</h3>
+          <p className="mt-1 text-[10px] text-muted">{hint ?? 'The first file becomes the cover image. Drag files anywhere in this area.'}</p>
         </div>
         {drafts.length > 0 && (
-          <button className="seller-outline-button" onClick={() => inputRef.current?.click()} type="button">
+          <button className={ui.outlineButton} onClick={() => inputRef.current?.click()} type="button">
             <Upload size={13} /> Add more
           </button>
         )}
@@ -80,7 +79,7 @@ export function ProductMediaPicker({ drafts, hint, label = 'Product media', onCh
       {drafts.length === 0
         ? (
           <button
-            className={`seller-dropzone w-full ${dragging ? 'seller-dropzone-active' : ''}`}
+            className={`${ui.dropzone} w-full ${dragging ? 'border-ink bg-soft' : ''}`}
             onClick={() => inputRef.current?.click()}
             type="button"
           >
@@ -93,18 +92,18 @@ export function ProductMediaPicker({ drafts, hint, label = 'Product media', onCh
           <div className={`grid grid-cols-2 gap-3 rounded-2xl p-0.5 transition sm:grid-cols-3 lg:grid-cols-4 ${dragging ? 'ring-2 ring-primary/40' : ''}`}>
             {drafts.map((draft, index) => (
               <div key={draft.id}>
-                <div className={`group seller-media-tile ${index === 0 ? 'seller-media-tile-cover' : ''}`}>
+                <div className={`group ${ui.mediaTile} ${index === 0 ? 'border-ink ring-2 ring-ink/15' : ''}`}>
                   {isVideoFile(draft.file)
                     ? <video muted playsInline src={draft.previewUrl} />
                     : <img alt={draft.file.name} src={draft.previewUrl} />}
-                  {index === 0 && <span className="seller-media-badge"><Star size={9} /> Cover</span>}
+                  {index === 0 && <span className={ui.mediaBadge}><Star size={9} /> Cover</span>}
                   {isVideoFile(draft.file) && index !== 0 && (
-                    <span className="absolute left-1.5 top-1.5 grid size-5 place-items-center rounded-full bg-[#241f1a]/70 text-white"><Play size={10} /></span>
+                    <span className="absolute left-1.5 top-1.5 grid size-5 place-items-center rounded-full bg-ink/70 text-white"><Play size={10} /></span>
                   )}
-                  <div className="seller-media-overlay">
+                  <div className={ui.mediaOverlay}>
                     {index !== 0 && (
                       <button
-                        className="seller-media-action"
+                        className={ui.mediaAction}
                         onClick={() => onChange([draft, ...drafts.filter((item) => item.id !== draft.id)])}
                         title="Use as cover"
                         type="button"
@@ -113,7 +112,7 @@ export function ProductMediaPicker({ drafts, hint, label = 'Product media', onCh
                       </button>
                     )}
                     <button
-                      className="seller-media-action text-red-600"
+                      className={`${ui.mediaAction} text-red-600`}
                       onClick={() => onChange(drafts.filter((item) => item.id !== draft.id))}
                       title="Remove"
                       type="button"
@@ -122,12 +121,12 @@ export function ProductMediaPicker({ drafts, hint, label = 'Product media', onCh
                     </button>
                   </div>
                 </div>
-                <span className="seller-media-caption" title={draft.file.name}>{draft.file.name}</span>
+                <span className={ui.mediaCaption} title={draft.file.name}>{draft.file.name}</span>
                 <span className="block text-[10px] text-muted/80">{formatBytes(draft.file.size)}</span>
               </div>
             ))}
             <button
-              className={`seller-dropzone aspect-square ${dragging ? 'seller-dropzone-active' : ''}`}
+              className={`${ui.dropzone} aspect-square ${dragging ? 'border-ink bg-soft' : ''}`}
               onClick={() => inputRef.current?.click()}
               type="button"
             >
@@ -157,30 +156,29 @@ export function ProductMediaGrid({ busy, media, onDelete, onMakePrimary }: {
     <div className={`grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4 ${busy ? 'pointer-events-none opacity-60' : ''}`}>
       {media.map((item) => (
         <div key={item.id}>
-          <div className={`group seller-media-tile ${item.isPrimary ? 'seller-media-tile-cover' : ''}`}>
+          <div className={`group ${ui.mediaTile} ${item.isPrimary ? 'border-ink ring-2 ring-ink/15' : ''}`}>
             {item.mediaType === 'IMAGE'
               ? <img alt={item.altText ?? ''} src={mediaUrl(item.url)} />
               : <video muted playsInline src={mediaUrl(item.url)} />}
-            {item.isPrimary && <span className="seller-media-badge"><Star size={9} /> Cover</span>}
-            <div className="seller-media-overlay">
+            {item.isPrimary && <span className={ui.mediaBadge}><Star size={9} /> Cover</span>}
+            <div className={ui.mediaOverlay}>
               {!item.isPrimary && (
-                <button className="seller-media-action" onClick={() => onMakePrimary(item)} title="Use as cover" type="button">
+                <button className={ui.mediaAction} onClick={() => onMakePrimary(item)} title="Use as cover" type="button">
                   <Star size={13} />
                 </button>
               )}
-              <button className="seller-media-action text-red-600" onClick={() => onDelete(item)} title="Delete" type="button">
+              <button className={`${ui.mediaAction} text-red-600`} onClick={() => onDelete(item)} title="Delete" type="button">
                 <Trash2 size={13} />
               </button>
             </div>
           </div>
-          <span className="seller-media-caption">{item.altText || item.mediaType.toLowerCase()} · {formatBytes(item.sizeBytes)}</span>
+          <span className={ui.mediaCaption}>{item.altText || item.mediaType.toLowerCase()} · {formatBytes(item.sizeBytes)}</span>
         </div>
       ))}
     </div>
   )
 }
 
-/** Revokes object URLs for drafts that leave the list, and everything on unmount. */
 function useRevokePreviews(drafts: MediaDraft[]) {
   const tracked = useRef(new Set<string>())
   useEffect(() => {

@@ -5,7 +5,7 @@ export function AuthField({ children, icon, label }: { children: ReactNode; icon
   return (
     <label className="block">
       <span className="mb-1.5 block text-[11px] font-bold text-ink">{label}</span>
-      <span className="auth-input">
+      <span className="flex min-h-10 items-center gap-3 rounded-xl border border-line bg-white px-3.5 transition focus-within:border-ink focus-within:ring-4 focus-within:ring-ink/10 [&_input]:min-w-0 [&_input]:flex-1 [&_input]:bg-transparent [&_input]:py-2.5 [&_input]:text-xs [&_input]:text-ink [&_input]:outline-none [&_input]:placeholder:text-muted/65">
         <span className="text-muted">{icon}</span>
         {children}
       </span>
@@ -29,7 +29,7 @@ export function PasswordField({ autoComplete = 'current-password', autoFocus, ic
   return (
     <label className="block">
       <span className="mb-1.5 block text-[11px] font-bold text-ink">{label}</span>
-      <span className="auth-input">
+      <span className="flex min-h-10 items-center gap-3 rounded-xl border border-line bg-white px-3.5 transition focus-within:border-ink focus-within:ring-4 focus-within:ring-ink/10 [&_input]:min-w-0 [&_input]:flex-1 [&_input]:bg-transparent [&_input]:py-2.5 [&_input]:text-xs [&_input]:text-ink [&_input]:outline-none [&_input]:placeholder:text-muted/65">
         <span className="text-muted">{icon}</span>
         <input
           autoComplete={autoComplete}
@@ -43,7 +43,7 @@ export function PasswordField({ autoComplete = 'current-password', autoFocus, ic
         />
         <button
           aria-label={visible ? 'Hide password' : 'Show password'}
-          className="auth-password-toggle"
+          className="-mr-2 grid size-9 shrink-0 place-items-center rounded-lg text-muted transition hover:bg-soft hover:text-ink"
           onClick={() => setVisible((current) => !current)}
           type="button"
         >
@@ -56,10 +56,10 @@ export function PasswordField({ autoComplete = 'current-password', autoFocus, ic
 
 export function AuthError({ message }: { message: string }) {
   if (!message) return null
-  return <p className="rounded-xl bg-red-50 px-4 py-3 text-xs font-semibold text-red-700" role="alert">{message}</p>
+  return <p className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-xs font-semibold text-red-700" role="alert">{message}</p>
 }
 
 export function AuthNotice({ message }: { message: string }) {
   if (!message) return null
-  return <p className="rounded-xl bg-primary-light px-4 py-3 text-xs font-semibold text-primary-dark">{message}</p>
+  return <p className="rounded-xl border border-line bg-soft px-4 py-3 text-xs font-semibold text-ink">{message}</p>
 }

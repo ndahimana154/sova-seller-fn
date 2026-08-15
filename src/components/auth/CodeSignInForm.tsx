@@ -75,7 +75,7 @@ export function CodeSignInForm({ onSignIn, onUsePassword }: CodeSignInFormProps)
             value={otp}
           />
           <button
-            className="text-xs font-bold text-primary-dark hover:underline"
+            className="text-xs font-bold text-ink underline-offset-2 hover:underline"
             onClick={() => { setSent(false); setOtp(''); setError(''); setMessage('') }}
             type="button"
           >
@@ -84,10 +84,10 @@ export function CodeSignInForm({ onSignIn, onUsePassword }: CodeSignInFormProps)
         </>
       )}
       <AuthError message={error} />
-      <button className="auth-submit" disabled={submitting || (sent && otp.length < OTP_LENGTH)} type="submit">
+      <button className="flex min-h-10 w-full items-center justify-center rounded-xl bg-primary px-5 text-xs font-black text-white shadow-[0_10px_24px_rgb(23_26_31/0.18)] transition hover:-translate-y-0.5 hover:bg-primary-dark disabled:pointer-events-none disabled:opacity-65" disabled={submitting || (sent && otp.length < OTP_LENGTH)} type="submit">
         {submitting ? 'Please wait…' : sent ? 'Verify and sign in' : 'Email me a code'}
       </button>
-      <button className="w-full text-xs font-bold text-muted hover:text-ink hover:underline" onClick={onUsePassword} type="button">
+      <button className="text-xs font-bold text-muted transition hover:text-ink hover:underline w-full" onClick={onUsePassword} type="button">
         Sign in with a password instead
       </button>
     </form>

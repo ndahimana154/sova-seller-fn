@@ -1,4 +1,4 @@
-import { Clock3, Edit3, X } from "lucide-react";
+import { Clock3, Pencil, X } from "lucide-react";
 import { sellerResourceUrl } from "../../../lib/sellerApi";
 import { applicationFeedback } from "./applicationUtils";
 import type { ApplicationRecord } from "./types";
@@ -16,7 +16,7 @@ export function ApplicationStatusModal({ application, onClose, onEdit }: { appli
           <span className="grid size-14 place-items-center rounded-full bg-primary-light text-primary-dark">
             <Clock3 size={25} />
           </span>
-          <p className="mt-6 auth-eyebrow">Application progress</p>
+          <p className="mt-6 text-[10px] font-black uppercase tracking-[0.2em] text-muted">Application progress</p>
           <h1 className="mt-2 pr-10 text-3xl font-black tracking-[-0.04em] text-ink" id="application-progress-title">
             {statusTitle(application.status)}
           </h1>
@@ -61,12 +61,12 @@ export function ApplicationStatusModal({ application, onClose, onEdit }: { appli
           </section>
           <FeedbackPanel application={application} />
           <div className="mt-7 flex flex-wrap justify-end gap-3">
-            <button className="secondary-button" onClick={onClose} type="button">
+            <button className="inline-flex items-center justify-center gap-2 rounded-full border border-ink/15 bg-white px-5 py-3 text-xs font-bold text-ink transition hover:border-ink/40 hover:bg-soft" onClick={onClose} type="button">
               Close
             </button>
             {feedback && application.canRenew && (
-              <button className="primary-button" onClick={onEdit} type="button">
-                <Edit3 size={15} /> Edit requested details
+              <button className="inline-flex items-center justify-center gap-2 rounded-full bg-ink px-5 py-3 text-xs font-bold text-white transition hover:-translate-y-0.5 hover:bg-primary-dark" onClick={onEdit} type="button">
+                <Pencil size={15} /> Edit requested details
               </button>
             )}
           </div>
@@ -83,11 +83,11 @@ export function TrackingErrorModal({ message, onClose }: { message: string; onCl
         <button aria-label="Close tracking response" className="absolute right-5 top-5 grid size-9 place-items-center rounded-full bg-soft text-muted transition hover:bg-line hover:text-ink" onClick={onClose} type="button">
           <X size={17} />
         </button>
-        <p className="auth-eyebrow pr-10 text-red-700" id="tracking-error-title">
+        <p className="text-[10px] font-black uppercase tracking-[0.2em] text-muted pr-10 text-red-700" id="tracking-error-title">
           Unable to track application
         </p>
         <p className="mt-3 text-sm leading-6 text-muted">{message}</p>
-        <button className="primary-button mt-6 w-full" onClick={onClose} type="button">
+        <button className="inline-flex items-center justify-center gap-2 rounded-full bg-ink px-5 py-3 text-xs font-bold text-white transition hover:-translate-y-0.5 hover:bg-primary-dark mt-6 w-full" onClick={onClose} type="button">
           Try another code
         </button>
       </div>

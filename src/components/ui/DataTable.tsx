@@ -6,8 +6,9 @@ import {
   Search,
   SlidersHorizontal,
 } from 'lucide-react'
-import { useState, type ReactNode } from 'react'
+import { useId, useState, type ReactNode } from 'react'
 import { Select } from './Select'
+import { ui } from './styles'
 
 export interface DataTablePagination {
   onPageChange: (page: number) => void
@@ -19,77 +20,113 @@ export interface DataTablePagination {
 }
 
 interface DataTableProps {
+  activeFilterCount?: number
   actions?: ReactNode
   columns: string[]
+  counter?: boolean
   emptyMessage?: string
   filters?: ReactNode
-  inlineFilters?: boolean
   onSearchChange?: (value: string) => void
   pagination?: DataTablePagination
+  primaryAction?: ReactNode
   rowActions?: (rowIndex: number) => ReactNode
   rows: ReactNode[][]
   searchPlaceholder?: string
+  subtitle?: string
+  title?: string
   toolbarEnd?: ReactNode
 }
 
 export function DataTable({
+  activeFilterCount = 0,
   actions,
   columns,
+  counter = true,
   emptyMessage = 'No records found.',
   filters,
-  inlineFilters = false,
   onSearchChange,
   pagination,
+  primaryAction,
   rowActions,
   rows,
   searchPlaceholder = 'Search records',
+  subtitle,
+  title,
   toolbarEnd,
 }: DataTableProps) {
   const [filtersOpen, setFiltersOpen] = useState(false)
-  const hasToolbar = Boolean(actions || filters || onSearchChange || toolbarEnd)
+  const filterPanelId = useId()
+  const counterOffset = pagination ? (pagination.page - 1) * pagination.pageSize : 0
+  const hasToolbar = Boolean(actions || filters || onSearchChange || primaryAction || toolbarEnd)
 
   return (
-    <div className="global-table">
+    <div className="overflow-hidden rounded-xl border border-line bg-white">
+      {title && (
+        <div className="border-b border-line bg-white px-3 py-3">
+          <h2 className="text-sm font-bold tracking-[-0.02em] text-ink">{title}</h2>
+          {subtitle && <p className="mt-1 text-[11px] leading-5 text-muted">{subtitle}</p>}
+        </div>
+      )}
       {hasToolbar && (
-        <div className="global-table-toolbar">
-          <div className="flex flex-wrap items-center gap-1.5">{actions}</div>
-          <div className="ml-auto flex min-w-0 flex-1 flex-nowrap items-center justify-end gap-1.5">
+        <div className="flex flex-col gap-2 border-b border-line bg-white p-3 sm:flex-row sm:items-center">
+          {actions && <div className="flex shrink-0 flex-wrap items-center gap-2">{actions}</div>}
+          {/* Nowrap keeps search, filters and the action on one line; the search
+              box is the only thing allowed to give up width. */}
+          <div className="ml-auto flex min-w-0 flex-1 items-center justify-end gap-2">
             {onSearchChange && (
-              <label className="seller-filter-input w-48 shrink-0">
-                <Search size={14} />
-                <input onChange={(event) => onSearchChange(event.target.value)} placeholder={searchPlaceholder} />
+              <label className="flex h-8 min-w-0 flex-1 items-center gap-2 rounded-md border border-line px-2.5 text-faint sm:max-w-52">
+                <Search className="shrink-0" size={14} />
+                <input onChange={(event) => onSearchChange(event.target.value)} className="min-w-0 flex-1 bg-transparent text-xs text-ink outline-none" placeholder={searchPlaceholder} />
               </label>
             )}
-            {filters && inlineFilters && filters}
-            {filters && !inlineFilters && (
+            {filters && (
               <button
+                aria-controls={filterPanelId}
                 aria-expanded={filtersOpen}
-                className={filtersOpen ? 'seller-primary-button' : 'seller-outline-button'}
+                className={`shrink-0 ${filtersOpen || activeFilterCount > 0 ? ui.primaryButton : ui.outlineButton}`}
                 onClick={() => setFiltersOpen((value) => !value)}
                 type="button"
               >
                 <SlidersHorizontal size={14} /> Filters
+                {activeFilterCount > 0 && <span className="grid min-w-4 place-items-center rounded-full bg-white/25 px-1 text-[9px] font-bold leading-4">{activeFilterCount}</span>}
                 {filtersOpen && <ChevronUp size={13} />}
               </button>
             )}
             {toolbarEnd}
+            {primaryAction && (
+              <>
+                <span aria-hidden className="mx-1 hidden h-5 w-px shrink-0 bg-line sm:block" />
+                <span className="shrink-0">{primaryAction}</span>
+              </>
+            )}
           </div>
         </div>
       )}
-      {filters && !inlineFilters && filtersOpen && <div className="global-table-filter-panel">{filters}</div>}
-      <div className="global-table-scroll">
-        <table className="global-data-table">
-          <thead><tr>{rowActions && <th>Actions</th>}{columns.map((column) => <th key={column}>{column}</th>)}</tr></thead>
+      {filters && filtersOpen && (
+        <div className="animate-reveal border-b border-line bg-canvas p-3 motion-reduce:animate-none" id={filterPanelId}>
+          <div className="flex flex-wrap items-end gap-3">{filters}</div>
+        </div>
+      )}
+      <div className="overflow-x-auto">
+        <table className={ui.table}>
+          <thead>
+            <tr>
+              {counter && <th className="w-10 text-center text-faint">#</th>}
+              {rowActions && <th>Actions</th>}
+              {columns.map((column) => <th key={column}>{column}</th>)}
+            </tr>
+          </thead>
           <tbody>
             {rows.map((row, rowIndex) => (
               <tr key={rowIndex}>
+                {counter && <td className="w-10 text-center text-faint">{counterOffset + rowIndex + 1}</td>}
                 {rowActions && <td><div className="flex items-center gap-1">{rowActions(rowIndex)}</div></td>}
                 {row.map((cell, cellIndex) => <td key={cellIndex}>{cell}</td>)}
               </tr>
             ))}
             {!rows.length && (
               <tr>
-                <td className="global-table-empty" colSpan={columns.length + (rowActions ? 1 : 0)}>
+                <td className="px-4 py-12 text-center text-xs text-muted" colSpan={columns.length + (rowActions ? 1 : 0) + (counter ? 1 : 0)}>
                   <span className="mx-auto flex max-w-xs flex-col items-center gap-2">
                     <span className="grid size-9 place-items-center rounded-full bg-soft text-muted"><Inbox size={16} /></span>
                     {emptyMessage}
@@ -114,7 +151,7 @@ function TablePagination({
   totalPages,
 }: DataTablePagination) {
   return (
-    <div className="flex flex-wrap items-center gap-3 border-t border-line bg-white px-3 py-2.5 text-xs">
+    <div className="flex flex-wrap items-center gap-3 border-t border-line bg-white px-3 py-3 text-xs">
       <span className="text-muted">{totalItems} item{totalItems === 1 ? '' : 's'}</span>
       <div className="ml-auto flex items-center gap-2 text-muted">
         Rows

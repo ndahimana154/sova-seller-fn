@@ -3,6 +3,7 @@ import { useRef, useState, type ReactNode } from 'react'
 import { createPortal } from 'react-dom'
 import { Link } from 'react-router-dom'
 import { useAnchoredPosition } from './useAnchoredPosition'
+import { ui } from './styles'
 
 export interface ActionMenuItem {
   danger?: boolean
@@ -40,7 +41,7 @@ export function ActionMenu({ align = 'start', buttonClassName, items, label = 'A
       <button
         aria-expanded={open}
         aria-haspopup="menu"
-        className={buttonClassName ?? 'seller-outline-button min-w-[94px] justify-between'}
+        className={buttonClassName ?? `${ui.outlineButton} min-w-[94px] justify-between`}
         onClick={() => setOpen((current) => !current)}
         ref={triggerRef}
         type="button"
