@@ -11,6 +11,7 @@ import {
   UserCheck,
 } from 'lucide-react'
 import { Card, SectionHeading } from '../ui'
+import { ui } from '../ui/styles'
 
 const benefits = [
   {
@@ -45,7 +46,7 @@ const steps = [
 const requirements = [
   { icon: FileText, label: 'RDB registration document', detail: 'A PDF or image of your registration certificate.' },
   { icon: BadgeCheck, label: 'TIN number', detail: 'The tax identification number of the business.' },
-  { icon: MapPin, label: 'Shop location', detail: 'Province down to village, plus the street and an optional map link.' },
+  { icon: MapPin, label: 'Shop location', detail: 'One Google Maps address, so buyers and couriers find you exactly.' },
   { icon: Phone, label: 'Representative details', detail: 'Name, email, and phone of the person who will run the shop.' },
 ]
 
@@ -74,7 +75,7 @@ const faqs = [
 
 export function HomeBenefits() {
   return (
-    <section className="mx-auto w-full max-w-[1320px] px-4 sm:px-6 lg:px-8 py-12 sm:py-18" id="why">
+    <section className={ui.publicSection} id="why">
       <SectionHeading
         eyebrow="Why sell on SOVA"
         title="Built for shops that want to be found"
@@ -96,7 +97,7 @@ export function HomeBenefits() {
 export function HomeSteps() {
   return (
     <section className="bg-soft/60" id="how">
-      <div className="mx-auto w-full max-w-[1320px] px-4 sm:px-6 lg:px-8 py-12 sm:py-18">
+      <div className={ui.publicSection}>
         <SectionHeading
           eyebrow="How it works"
           title="From application to first product"
@@ -119,7 +120,7 @@ export function HomeSteps() {
 
 export function HomeRequirements() {
   return (
-    <section className="mx-auto w-full max-w-[1320px] px-4 sm:px-6 lg:px-8 py-12 sm:py-18" id="requirements">
+    <section className={ui.publicSection} id="requirements">
       <div className="grid gap-10 lg:grid-cols-[minmax(0,0.9fr)_minmax(0,1.1fr)]">
         <SectionHeading
           align="left"
@@ -146,7 +147,7 @@ export function HomeRequirements() {
 export function HomeFaq() {
   return (
     <section className="bg-soft/60" id="faq">
-      <div className="mx-auto w-full max-w-[1320px] px-4 sm:px-6 lg:px-8 py-12 sm:py-18">
+      <div className={ui.publicSection}>
         <SectionHeading eyebrow="FAQ" title="Questions sellers ask us" />
         <div className="mx-auto mt-10 max-w-3xl [&>*+*]:mt-3">
           {faqs.map((faq) => (

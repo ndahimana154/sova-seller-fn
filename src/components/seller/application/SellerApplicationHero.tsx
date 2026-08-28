@@ -8,7 +8,7 @@ export function SellerApplicationHero({ onTrack, renewing, tracking }: { onTrack
       <div className="mx-auto w-full max-w-[1320px] px-4 sm:px-6 lg:px-8 py-8 sm:py-12">
         <div className="flex flex-col gap-6 lg:flex-row lg:items-end lg:justify-between">
           <div>
-            <p className="text-[10px] font-black uppercase tracking-[0.2em] text-muted">Shop application</p>
+            <p className={ui.eyebrow}>Shop application</p>
             <h1 className="mt-2 text-2xl font-black tracking-[-0.04em] text-ink sm:text-3xl">Sell on SOVA</h1>
             <p className="mt-3 text-sm leading-6 text-muted">{renewing ? "Correct the requested details and resubmit for review" : "Complete one application to open your shop on the marketplace"}</p>
           </div>

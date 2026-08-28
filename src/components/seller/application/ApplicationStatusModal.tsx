@@ -47,14 +47,8 @@ export function ApplicationStatusModal({ application, onClose, onEdit }: { appli
               <StatusDetail label="Representative" value={shop.representativeNames || "Not provided"} />
               <StatusDetail label="Representative email" value={shop.representativeEmail || "Not provided"} />
               <StatusDetail label="Representative phone" value={shop.representativePhone || "Not provided"} />
-              <StatusDetail label="Province" value={shop.village?.sector?.district?.province?.name || "Not provided"} />
-              <StatusDetail label="District" value={shop.village?.sector?.district?.name || "Not provided"} />
-              <StatusDetail label="Sector" value={shop.village?.sector?.name || "Not provided"} />
-              <StatusDetail label="Cell" value={shop.village?.cell?.name || "Not provided"} />
-              <StatusDetail label="Village" value={shop.village?.name || "Not provided"} />
-              <StatusDetail label="Street" value={shop.street || "Not provided"} />
-              <StatusDetail label="TIN number" value={shop.tinNumber || "Not provided"} />
-              <ApplicationLinkDetail label="Google Maps location" linkText={shop.googleMapsLocationLink || undefined} rawUrl url={shop.googleMapsLocationLink} />
+              <StatusDetail label="Shop address" value={shop.addressLabel || "Not provided"} />
+              <ApplicationLinkDetail label="Google Maps location" linkText={shop.addressLabel || undefined} rawUrl url={shop.mapsUrl ?? null} />
               <ApplicationLinkDetail label="RDB registration document" linkText="Open RDB document" url={shop.rbdRegistrationDocument} />
               <ApplicationLinkDetail label="Shop logo" linkText="Open shop logo" url={shop.logo} />
             </div>

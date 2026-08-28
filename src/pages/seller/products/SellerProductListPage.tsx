@@ -8,7 +8,7 @@ import { ActionMenu } from '../../../components/ui/ActionMenu'
 import { useConfirm } from '../../../components/ui/ConfirmDialog'
 import { DataTable } from '../../../components/ui/DataTable'
 import { Select } from '../../../components/ui/Select'
-import { formatPrice } from '../../../lib/formatPrice'
+import { formatMoney } from '../../../lib/money'
 import { sellerProductsApi, type SellerCategory, type SellerProduct } from '../../../lib/sellerProductsApi'
 import { appPaths } from '../../../router/paths'
 import { ui } from '../../../components/ui/styles'
@@ -141,13 +141,13 @@ function PriceCell({ product }: { product: SellerProduct }) {
   return (
     <span className="text-ink">
       <span className="flex items-center gap-1.5">
-        {formatPrice(featured.salePrice)}
+        {formatMoney(featured.salePrice)}
         {featured.discountPercent ? <Badge tone="accent">−{featured.discountPercent}%</Badge> : null}
       </span>
       {featured.discountPercent ? (
-        <span className="block text-[10px] text-muted line-through">{formatPrice(featured.price)}</span>
+        <span className="block text-[10px] text-muted line-through">{formatMoney(featured.price)}</span>
       ) : product.maxPrice > product.price ? (
-        <span className="block text-[10px] text-muted">up to {formatPrice(product.maxPrice)}</span>
+        <span className="block text-[10px] text-muted">up to {formatMoney(product.maxPrice)}</span>
       ) : null}
     </span>
   )

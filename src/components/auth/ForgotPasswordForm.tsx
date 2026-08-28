@@ -4,6 +4,7 @@ import { normalizeApiError } from '../../api/errors'
 import { requestPasswordReset, resetPassword, verifyPasswordResetOtp } from '../../lib/sellerAuth'
 import { OtpInput } from '../ui/OtpInput'
 import { AuthError, AuthField, PasswordField } from './AuthField'
+import { ui } from '../ui/styles'
 
 const OTP_LENGTH = 6
 
@@ -83,7 +84,7 @@ export function ForgotPasswordForm({ onCancel, onDone }: ForgotPasswordFormProps
         </>
       )}
       <AuthError message={error} />
-      <button className="flex min-h-10 w-full items-center justify-center rounded-xl bg-primary px-5 text-xs font-black text-white shadow-[0_10px_24px_rgb(23_26_31/0.18)] transition hover:-translate-y-0.5 hover:bg-primary-dark disabled:pointer-events-none disabled:opacity-65" disabled={submitting || (step === 'code' && otp.length < OTP_LENGTH)} type="submit">
+      <button className={ui.authSubmit} disabled={submitting || (step === 'code' && otp.length < OTP_LENGTH)} type="submit">
         {submitting ? 'Please wait…' : step === 'email' ? 'Email me a reset code' : step === 'code' ? 'Verify code' : 'Set new password'}
       </button>
       <button className="text-xs font-bold text-muted transition hover:text-ink hover:underline w-full" onClick={onCancel} type="button">

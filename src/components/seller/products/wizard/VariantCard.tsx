@@ -12,7 +12,7 @@ import {
   type VariantDraft,
   type VariantValueDraft,
 } from './variantDraft'
-import { formatPrice } from '../../../../lib/formatPrice'
+import { formatMoney } from '../../../../lib/money'
 import { useToast } from '../../../../hooks/useToast'
 import { Badge, Select } from '../../../ui'
 import { Field, mediaUrl } from '../ProductPageUi'
@@ -142,9 +142,9 @@ export function VariantCard({
           {draft.saved?.isDefault && <span className="ml-2"><Badge tone="info">Default</Badge></span>}
           {dirty && <span className="ml-2"><Badge tone="warning">Unsaved</Badge></span>}
           <span className="ml-2 text-[11px] text-muted">
-            {draft.saved ? formatPrice(salePrice) : 'Not saved yet'}
+            {draft.saved ? formatMoney(salePrice) : 'Not saved yet'}
             {draft.saved && discount > 0 && (
-              <span className="ml-1.5 line-through opacity-60">{formatPrice(price)}</span>
+              <span className="ml-1.5 line-through opacity-60">{formatMoney(price)}</span>
             )}
             {draft.saved && media.length > 0 && (
               <span className="ml-2 inline-flex items-center gap-1">

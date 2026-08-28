@@ -86,7 +86,7 @@ export function MediaStep({
             onPrimary={(id) => void run(() => sellerProductsApi.updateMedia(product.id, id, { isPrimary: true }))}
           />
           {!shared.length && (
-            <p className="rounded-xl border border-dashed border-line bg-soft/50 p-4 text-center text-[11px] text-muted">
+            <p className={`${ui.hint} p-4`}>
               No product-level photos yet.
             </p>
           )}

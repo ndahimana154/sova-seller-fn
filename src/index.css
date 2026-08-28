@@ -15,14 +15,10 @@
   --color-line: #e8e9eb;
 
   --font-sans: Avenir, "Avenir Next", "Nunito Sans", system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-  --font-rubik: var(--font-sans);
-  --font-avenir: var(--font-sans);
 
-  --shadow-soft: 0 12px 32px rgb(23 26 31 / 8%);
   --shadow-card: 0 10px 30px rgb(23 26 31 / 4%);
 
   --spacing-18: 4.5rem;
-  --spacing-22: 5.5rem;
 
   --radius-panel: 1.75rem;
 
@@ -32,25 +28,13 @@
   --animate-pop: pop 130ms ease-out;
 }
 
+/* Preflight already handles box-sizing, margins, `font: inherit` on controls,
+   and link colour. What remains cannot be expressed as a utility on an
+   element: a cursor Tailwind v4 no longer sets, and two global interaction
+   defaults. */
 @layer base {
-  * {
-    box-sizing: border-box;
-  }
-
-  html {
-    scroll-behavior: smooth;
-    font-family: var(--font-sans);
-  }
-
-  body {
-    margin: 0;
-    min-width: 320px;
-    background: white;
-  }
-
-  button,
-  input {
-    font: inherit;
+  button {
+    cursor: pointer;
   }
 
   button,
@@ -58,68 +42,9 @@
     -webkit-tap-highlight-color: transparent;
   }
 
-  button {
-    cursor: pointer;
-  }
-
-  a {
-    text-decoration: none;
-    color: inherit;
-  }
-
   :focus-visible {
     outline: 3px solid rgb(23 26 31 / 18%);
     outline-offset: 2px;
-  }
-}
-
-@layer components {
-  /* Kept in CSS: these need pseudo-elements, a background image, or a media
-     query that utilities on the element cannot express. Everything else now
-     lives as Tailwind classes on the markup. */
-  .auth-page {
-    @apply relative grid h-dvh place-items-center overflow-hidden bg-canvas px-4 py-3 sm:px-8 sm:py-5;
-  }
-
-  .auth-page::before {
-    content: "";
-    @apply pointer-events-none absolute -left-32 -top-32 size-96 rounded-full bg-ink/5 blur-3xl;
-  }
-
-  .auth-page::after {
-    content: "";
-    @apply pointer-events-none absolute -bottom-40 -right-24 size-[30rem] rounded-full bg-white/70 blur-3xl;
-  }
-
-  .auth-shell {
-    @apply relative z-10 grid max-h-full w-full max-w-[1120px] overflow-hidden rounded-panel border border-line bg-white;
-    box-shadow: 0 30px 90px rgb(23 26 31 / 14%);
-  }
-
-  @media (min-width: 1024px) {
-    .auth-shell {
-      height: min(610px, calc(100dvh - 2.5rem));
-      grid-template-columns: minmax(0, 0.94fr) minmax(420px, 1.06fr);
-    }
-  }
-
-  .auth-visual {
-    @apply relative hidden h-full min-h-0 overflow-hidden bg-ink lg:block;
-    background-image: url("/images/storefront-hero.png");
-    background-position: 68% center;
-    background-size: cover;
-  }
-
-  .brand-mark {
-    @apply relative block size-8 overflow-hidden rounded-lg bg-accent;
-  }
-
-  .brand-mark i:first-child {
-    @apply absolute -right-2 top-1/2 size-6 -translate-y-1/2 rounded-full bg-white;
-  }
-
-  .brand-mark i:last-child {
-    @apply absolute right-0 top-1/2 size-2.5 -translate-y-1/2 rounded-l-full bg-accent;
   }
 }
 
@@ -167,4 +92,24 @@
     opacity: 1;
     transform: translateY(0) scale(1);
   }
+}
+
+@layer components {
+  .rich-text-body { @apply text-xs leading-6 text-muted; }
+  .rich-text-body h1 { @apply mb-2 mt-4 text-base font-black text-ink first:mt-0; }
+  .rich-text-body h2 { @apply mb-2 mt-4 text-sm font-black text-ink first:mt-0; }
+  .rich-text-body h3 { @apply mb-1.5 mt-3 text-xs font-black uppercase tracking-[0.1em] text-ink first:mt-0; }
+  .rich-text-body p { @apply my-2; }
+  .rich-text-body ul { @apply my-2 list-disc space-y-1 pl-5; }
+  .rich-text-body ol { @apply my-2 list-decimal space-y-1 pl-5; }
+  .rich-text-body a { @apply font-bold text-ink underline underline-offset-2 hover:text-primary-dark; }
+  .rich-text-body strong { @apply font-bold text-ink; }
+  .rich-text-body blockquote { @apply my-3 border-l-2 border-line pl-3 italic; }
+  .rich-text-body pre { @apply my-3 overflow-x-auto rounded-lg bg-soft p-3 font-mono text-[11px] text-ink; }
+  .rich-text-body code { @apply rounded bg-soft px-1 py-0.5 font-mono text-[11px] text-ink; }
+  .rich-text-body img { @apply my-3 max-w-full rounded-xl border border-line; }
+  .rich-text-body hr { @apply my-4 border-line; }
+  .rich-text-body table { @apply my-3 w-full border-collapse text-[11px]; }
+  .rich-text-body th, .rich-text-body td { @apply border border-line px-2 py-1.5 text-left; }
+  .rich-text-body mark { @apply rounded px-0.5; }
 }

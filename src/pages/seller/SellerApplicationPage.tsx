@@ -1,9 +1,12 @@
 import { Building2, FileCheck2, LoaderCircle, MapPin } from "lucide-react";
 import { useEffect, useState, type FormEvent } from "react";
-import { getCells, getDistricts, getLocationTree, getProvinces, getSectors, getVillages, renewShopApplication, submitShopApplication, trackShopApplication, type LocationOption, type ShopApplicationPayload } from "../../lib/sellerApi";
+import { renewShopApplication, submitShopApplication, trackShopApplication, type ShopApplicationPayload } from "../../lib/sellerApi";
+import { AddressField, type AddressValue } from "../../components/form/AddressField";
+import { TermsDialog } from "../../components/seller/application/TermsDialog";
+import { policyApi } from "../../lib/policyApi";
+import { PHONE_HINT, normalizePhone } from "../../lib/phone";
 import { normalizeApiError } from "../../api/errors";
 import { useToast } from "../../hooks/useToast";
-import { Select } from "../../components/ui/Select";
 import {
   ApplicationStatusModal,
   FormField,
@@ -15,29 +18,22 @@ import {
   applicationFeedback,
   fieldValidationMessage,
   findInvalidFields,
-  findLocationPath,
   loadSellerAccount,
-  toLocationOption,
   type ApplicationRecord,
 } from "../../components/seller/application";
 
-const locationOptions = (items: LocationOption[]) => items.map((item) => ({ label: item.name, value: item.id }));
 
 export function SellerApplicationPage() {
   const account = loadSellerAccount();
-  const [provinces, setProvinces] = useState<LocationOption[]>([]);
-  const [districts, setDistricts] = useState<LocationOption[]>([]);
-  const [sectors, setSectors] = useState<LocationOption[]>([]);
-  const [cells, setCells] = useState<LocationOption[]>([]);
-  const [villages, setVillages] = useState<LocationOption[]>([]);
-  const [provinceId, setProvinceId] = useState("");
-  const [districtId, setDistrictId] = useState("");
-  const [sectorId, setSectorId] = useState("");
-  const [cellId, setCellId] = useState("");
-  const [villageId, setVillageId] = useState("");
-  const [locationHydrated, setLocationHydrated] = useState(false);
-  const [locationLoading, setLocationLoading] = useState(false);
-  const [locationError, setLocationError] = useState("");
+  const [termsOpen, setTermsOpen] = useState(false);
+  const [termsVersion, setTermsVersion] = useState("");
+  const [address, setAddress] = useState<AddressValue>({
+    addressHouseNumber: "",
+    addressLabel: "",
+    addressLatitude: null,
+    addressLongitude: null,
+    addressPlaceId: null,
+  });
   const [submitting, setSubmitting] = useState(false);
   const toast = useToast();
   const [formVersion, setFormVersion] = useState(0);
@@ -52,91 +48,16 @@ export function SellerApplicationPage() {
   }, []);
 
   useEffect(() => {
-    setLocationLoading(true);
-    getProvinces()
-      .then((items) => {
-        setProvinces(items);
-        setLocationError("");
+    policyApi
+      .current()
+      .then((policies) => {
+        const terms = policies.find((entry) => entry.slug === "terms_and_conditions");
+        if (terms) setTermsVersion(terms.version);
       })
-      .catch((error) => setLocationError(normalizeApiError(error).message))
-      .finally(() => setLocationLoading(false));
+      .catch(() => undefined);
   }, []);
 
-  useEffect(() => {
-    if (locationHydrated) return;
-    if (!provinceId) {
-      setDistricts([]);
-      return;
-    }
-    setLocationLoading(true);
-    getDistricts(provinceId)
-      .then((items) => {
-        setDistricts(items);
-        setLocationError("");
-      })
-      .catch((error) => setLocationError(normalizeApiError(error).message))
-      .finally(() => setLocationLoading(false));
-    setDistrictId("");
-    setSectorId("");
-    setCellId("");
-    setSectors([]);
-    setCells([]);
-    setVillages([]);
-  }, [locationHydrated, provinceId]);
 
-  useEffect(() => {
-    if (locationHydrated) return;
-    if (!districtId) {
-      setSectors([]);
-      return;
-    }
-    setLocationLoading(true);
-    getSectors(districtId)
-      .then((items) => {
-        setSectors(items);
-        setLocationError("");
-      })
-      .catch((error) => setLocationError(normalizeApiError(error).message))
-      .finally(() => setLocationLoading(false));
-    setSectorId("");
-    setCellId("");
-    setCells([]);
-    setVillages([]);
-  }, [districtId, locationHydrated]);
-
-  useEffect(() => {
-    if (locationHydrated) return;
-    if (!sectorId) {
-      setCells([]);
-      return;
-    }
-    setLocationLoading(true);
-    getCells(sectorId)
-      .then((items) => {
-        setCells(items);
-        setLocationError("");
-      })
-      .catch((error) => setLocationError(normalizeApiError(error).message))
-      .finally(() => setLocationLoading(false));
-    setCellId("");
-    setVillages([]);
-  }, [locationHydrated, sectorId]);
-
-  useEffect(() => {
-    if (locationHydrated) return;
-    if (!cellId) {
-      setVillages([]);
-      return;
-    }
-    setLocationLoading(true);
-    getVillages(cellId)
-      .then((items) => {
-        setVillages(items);
-        setLocationError("");
-      })
-      .catch((error) => setLocationError(normalizeApiError(error).message))
-      .finally(() => setLocationLoading(false));
-  }, [cellId, locationHydrated]);
 
   async function trackApplication(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -183,13 +104,16 @@ export function SellerApplicationPage() {
       applicantName,
       name: String(data.get("shopName")).trim(),
       email: String(data.get("shopEmail")).trim(),
-      phone: String(data.get("phone")).trim(),
-      representativePhone: String(data.get("representativePhone")).trim(),
+      phone: normalizePhone(String(data.get("phone"))),
+      representativePhone: normalizePhone(String(data.get("representativePhone"))),
       description: String(data.get("description")).trim(),
-      villageId: String(data.get("villageId")),
-      street: String(data.get("street")).trim(),
-      googleMapsLocationLink: String(data.get("googleMapsLocationLink")).trim() || undefined,
+      addressHouseNumber: address.addressHouseNumber.trim(),
+      addressLabel: address.addressLabel.trim(),
+      addressPlaceId: address.addressPlaceId,
+      addressLatitude: address.addressLatitude,
+      addressLongitude: address.addressLongitude,
       tinNumber: String(data.get("tinNumber")).trim(),
+      acceptTerms: data.get("termsAccepted") === "on",
       rbdRegistrationDocument: registrationDocument instanceof File && registrationDocument.size ? registrationDocument : undefined,
       logo: logo instanceof File && logo.size ? logo : undefined,
     };
@@ -199,16 +123,7 @@ export function SellerApplicationPage() {
       await (renewalApplication ? renewShopApplication(renewalApplication.applicationCode, payload) : submitShopApplication(payload));
       setRenewalApplication(null);
       setApplication(null);
-      setProvinceId("");
-      setDistrictId("");
-      setSectorId("");
-      setCellId("");
-      setVillageId("");
-      setDistricts([]);
-      setSectors([]);
-      setCells([]);
-      setVillages([]);
-      setLocationHydrated(false);
+      setAddress({ addressHouseNumber: "", addressLabel: "", addressLatitude: null, addressLongitude: null, addressPlaceId: null });
       setFormVersion((current) => current + 1);
       toast.success("Your request has been sent successfully.");
       window.scrollTo({ top: 0, behavior: "smooth" });
@@ -219,56 +134,18 @@ export function SellerApplicationPage() {
     }
   }
 
-  async function editReturnedApplication(returnedApplication: ApplicationRecord) {
-    const savedVillage = returnedApplication.shop.village;
-    const savedSector = savedVillage?.sector;
-    const savedDistrict = savedSector?.district;
-    const savedProvince = savedDistrict?.province;
-    const savedCell = savedVillage?.cell;
-    if (savedProvince && savedDistrict && savedSector && savedCell && savedVillage) {
-      setProvinces([toLocationOption(savedProvince)]);
-      setDistricts([toLocationOption(savedDistrict)]);
-      setSectors([toLocationOption(savedSector)]);
-      setCells([toLocationOption(savedCell)]);
-      setVillages([toLocationOption(savedVillage)]);
-      setProvinceId(savedProvince.id);
-      setDistrictId(savedDistrict.id);
-      setSectorId(savedSector.id);
-      setCellId(savedCell.id);
-      setVillageId(savedVillage.id);
-      setLocationHydrated(true);
-    }
+  function editReturnedApplication(returnedApplication: ApplicationRecord) {
+    const shop = returnedApplication.shop;
+    setAddress({
+      addressHouseNumber: shop.addressHouseNumber ?? "",
+      addressLabel: shop.addressLabel ?? "",
+      addressLatitude: shop.addressLatitude ?? null,
+      addressLongitude: shop.addressLongitude ?? null,
+      addressPlaceId: shop.addressPlaceId ?? null,
+    });
     setRenewalApplication(returnedApplication);
     setApplication(null);
-    setLocationLoading(true);
-    setLocationError("");
     window.scrollTo({ top: 0, behavior: "smooth" });
-    try {
-      const tree = await getLocationTree();
-      const savedVillageId = returnedApplication.shop.village?.id;
-      const path = savedVillageId ? findLocationPath(tree, savedVillageId) : undefined;
-      if (path) {
-        setProvinces(tree.map(toLocationOption));
-        setDistricts(path.province.districts.map(toLocationOption));
-        setSectors(path.district.sectors.map(toLocationOption));
-        setCells(path.sector.cells.map(toLocationOption));
-        setVillages(path.cell.villages);
-        setProvinceId(path.province.id);
-        setDistrictId(path.district.id);
-        setSectorId(path.sector.id);
-        setCellId(path.cell.id);
-        setVillageId(path.village.id);
-        setLocationHydrated(true);
-      } else {
-        setLocationHydrated(false);
-        setLocationError("The saved village could not be found in the current SOVA location tree. Please select the shop location again.");
-      }
-    } catch (error) {
-      setLocationHydrated(false);
-      setLocationError(normalizeApiError(error).message);
-    } finally {
-      setLocationLoading(false);
-    }
   }
 
   const renewalShop = renewalApplication?.shop;
@@ -314,7 +191,7 @@ export function SellerApplicationPage() {
                   <input defaultValue={renewalShop?.email || ""} name="shopEmail" placeholder="shop@example.com" required type="email" />
                 </FormField>
                 <FormField label="Shop phone">
-                  <input defaultValue={renewalShop?.phone || ""} inputMode="numeric" maxLength={10} name="phone" pattern="07(8|9|3|2)[0-9]{7}" placeholder="0781234567" required title="Use 10 digits starting with 078, 079, 073, or 072." type="tel" />
+                  <input defaultValue={renewalShop?.phone || ""} inputMode="numeric" maxLength={16} name="phone" onBlur={(event) => { event.target.value = normalizePhone(event.target.value) }} pattern="07(8|9|3|2)[0-9]{7}" placeholder="0781234567" required title={`Use ${PHONE_HINT}.`} type="tel" />
                 </FormField>
                 <FormField className="sm:col-span-2 lg:col-span-3" label="Shop description">
                   <textarea className="min-h-28 resize-y" defaultValue={renewalShop?.description || ""} maxLength={2000} minLength={20} name="description" placeholder="Describe what you sell, where products come from, and what makes your shop trustworthy." required />
@@ -330,108 +207,22 @@ export function SellerApplicationPage() {
                   <input defaultValue={renewalShop?.representativeEmail || prefilledAccount.email} name="applicantEmail" placeholder="you@example.com" readOnly={Boolean(prefilledAccount.email)} required type="email" />
                 </FormField>
                 <FormField label="Representative phone">
-                  <input defaultValue={renewalShop?.representativePhone || ""} inputMode="numeric" maxLength={10} name="representativePhone" pattern="07(8|9|3|2)[0-9]{7}" placeholder="0781234567" required title="Use 10 digits starting with 078, 079, 073, or 072." type="tel" />
+                  <input defaultValue={renewalShop?.representativePhone || ""} inputMode="numeric" maxLength={16} name="representativePhone" onBlur={(event) => { event.target.value = normalizePhone(event.target.value) }} pattern="07(8|9|3|2)[0-9]{7}" placeholder="0781234567" required title={`Use ${PHONE_HINT}.`} type="tel" />
                 </FormField>
               </div>
             </div>
 
             <div className="mt-10 border-t border-line pt-8">
-              <FormHeading icon={<MapPin size={20} />} title="Where is the shop located?" copy="Province, district, sector, cell, and village options come directly from the SOVA public location API." />
-              {locationError && <p className="mt-4 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-xs font-semibold text-red-700">{locationError}</p>}
-              <div className="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-                <FormField label="Province">
-                  <Select
-                    name="provinceId"
-                    onChange={(value) => {
-                      setLocationHydrated(false);
-                      setProvinceId(value);
-                      setDistrictId("");
-                      setSectorId("");
-                      setCellId("");
-                      setVillageId("");
-                    }}
-                    options={locationOptions(provinces)}
-                    placeholder="Select province"
-                    required
-                    value={provinceId}
-                    variant="bare"
-                  />
-                </FormField>
-                <FormField label="District">
-                  <Select
-                    disabled={!provinceId}
-                    name="districtId"
-                    onChange={(value) => {
-                      setLocationHydrated(false);
-                      setDistrictId(value);
-                      setSectorId("");
-                      setCellId("");
-                      setVillageId("");
-                    }}
-                    options={locationOptions(districts)}
-                    placeholder="Select district"
-                    required
-                    value={districtId}
-                    variant="bare"
-                  />
-                </FormField>
-                <FormField label="Sector">
-                  <Select
-                    disabled={!districtId}
-                    name="sectorId"
-                    onChange={(value) => {
-                      setLocationHydrated(false);
-                      setSectorId(value);
-                      setCellId("");
-                      setVillageId("");
-                    }}
-                    options={locationOptions(sectors)}
-                    placeholder="Select sector"
-                    required
-                    value={sectorId}
-                    variant="bare"
-                  />
-                </FormField>
-                <FormField label="Cell">
-                  <Select
-                    disabled={!sectorId}
-                    name="cellId"
-                    onChange={(value) => {
-                      setLocationHydrated(false);
-                      setCellId(value);
-                      setVillageId("");
-                    }}
-                    options={locationOptions(cells)}
-                    placeholder="Select cell"
-                    required
-                    value={cellId}
-                    variant="bare"
-                  />
-                </FormField>
-                <FormField label="Village">
-                  <Select
-                    disabled={!cellId}
-                    name="villageId"
-                    onChange={setVillageId}
-                    options={locationOptions(villages)}
-                    placeholder="Select village"
-                    required
-                    value={villageId}
-                    variant="bare"
-                  />
-                </FormField>
-                <FormField label="Street or building">
-                  <input defaultValue={renewalShop?.street || ""} name="street" placeholder="Street, building, or landmark" required />
-                </FormField>
-                <FormField className="sm:col-span-2 lg:col-span-3" label="Google Maps link (optional)">
-                  <input defaultValue={renewalShop?.googleMapsLocationLink || ""} name="googleMapsLocationLink" placeholder="https://maps.google.com/..." type="url" />
-                </FormField>
-              </div>
-              {locationLoading && (
-                <p className="mt-4 flex items-center gap-2 text-xs text-muted">
-                  <LoaderCircle className="animate-spin" size={14} /> Loading location information…
+              <FormHeading icon={<MapPin size={20} />} title="Where is the shop located?" copy="Search for the shop on Google Maps so buyers and couriers get exact directions." />
+              <div className="mt-6">
+                <span className="text-xs font-bold text-ink">
+                  Shop address<span aria-hidden="true" className="ml-1 text-red-600">*</span>
+                </span>
+                <AddressField onChange={setAddress} required value={address} />
+                <p className="mt-1.5 text-[11px] text-muted">
+                  For example 97 KK 19 Ave, Kigali.
                 </p>
-              )}
+              </div>
             </div>
 
             <div className="mt-10 border-t border-line pt-8">
@@ -462,10 +253,14 @@ export function SellerApplicationPage() {
                   <input className="size-4 rounded border-line accent-ink mt-0.5" name="termsAccepted" required type="checkbox" />
                   <span>
                     I have read and agree to the{" "}
-                    <a className="font-bold text-ink underline underline-offset-2 transition hover:text-primary-dark" href="#terms">
+                    <button
+                      className="font-bold text-ink underline underline-offset-2 transition hover:text-primary-dark"
+                      onClick={() => setTermsOpen(true)}
+                      type="button"
+                    >
                       SOVA terms and conditions
-                    </a>
-                    .
+                    </button>
+                    {termsVersion && <span className="text-muted"> (v{termsVersion})</span>}.
                     <span className="ml-1 text-red-600" aria-hidden="true">
                       *
                     </span>
@@ -497,6 +292,7 @@ export function SellerApplicationPage() {
       </section>
       {application && <ApplicationStatusModal application={application} onClose={() => setApplication(null)} onEdit={() => void editReturnedApplication(application)} />}
       {trackingError && <TrackingErrorModal message={trackingError} onClose={() => setTrackingError("")} />}
+      {termsOpen && <TermsDialog onClose={() => setTermsOpen(false)} />}
     </main>
   );
 }

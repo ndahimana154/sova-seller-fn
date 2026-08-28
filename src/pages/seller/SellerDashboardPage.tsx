@@ -26,11 +26,12 @@ import { setSellerSidebarOpen, toggleSellerSidebarCollapsed } from '../../store/
 import { appPaths } from '../../router/paths'
 import { ui } from '../../components/ui/styles'
 
-type Section = 'dashboard' | 'products' | 'categories' | 'videos' | 'settings'
+type Section = 'dashboard' | 'products' | 'categories' | 'videos' | 'orders' | 'settings'
 
 const SECTION_PATHS: Record<Section, string> = {
   categories: appPaths.categories,
   dashboard: appPaths.dashboard,
+  orders: appPaths.orders,
   products: appPaths.products,
   settings: appPaths.settings,
   videos: appPaths.videos,
@@ -89,7 +90,7 @@ export function SellerDashboardPage({
   })
   const [productOpen, setProductOpen] = useState(true)
   const activeSection = sectionFromPath(location.pathname)
-  const sectionLabels = { categories: 'Product categories', dashboard: 'Dashboard', products: 'Products', settings: 'Account settings', videos: 'Videos' } as const
+  const sectionLabels = { categories: 'Product categories', dashboard: 'Dashboard', orders: 'Orders', products: 'Products', settings: 'Account settings', videos: 'Videos' } as const
   const initials = user.name
     .split(/\s+/)
     .map((part) => part[0])
@@ -194,7 +195,14 @@ export function SellerDashboardPage({
                           </div>
                         )
                       }
-                      const target = item.label === 'Dashboard' ? 'dashboard' : item.label === 'Account settings' ? 'settings' : undefined
+                      const target: Section | undefined =
+                        item.label === 'Dashboard'
+                          ? 'dashboard'
+                          : item.label === 'Orders'
+                            ? 'orders'
+                            : item.label === 'Account settings'
+                              ? 'settings'
+                              : undefined
                       return (
                         <button
                           className={`${navItem} ${target && activeSection === target ? navItemActive : ''}`}
@@ -288,6 +296,7 @@ export function SellerDashboardPage({
 function sectionFromPath(pathname: string): Section {
   if (pathname.startsWith(appPaths.categories)) return 'categories'
   if (pathname.startsWith(appPaths.videos)) return 'videos'
+  if (pathname.startsWith(appPaths.orders)) return 'orders'
   if (pathname.startsWith(appPaths.products)) return 'products'
   if (pathname.startsWith(appPaths.settings)) return 'settings'
   return 'dashboard'

@@ -1,4 +1,5 @@
 import type { ReactNode } from 'react'
+import { ui } from '../ui/styles'
 
 type CardTone = 'plain' | 'raised' | 'muted'
 type BadgeTone = 'neutral' | 'ink' | 'accent' | 'info' | 'purple' | 'success' | 'warning' | 'danger'
@@ -56,7 +57,7 @@ export function SectionHeading({ align = 'center', eyebrow, lead, title }: {
 }) {
   return (
     <div className={align === 'center' ? 'mx-auto max-w-2xl text-center' : 'max-w-md'}>
-      {eyebrow && <p className="text-[10px] font-black uppercase tracking-[0.2em] text-muted">{eyebrow}</p>}
+      {eyebrow && <p className={ui.eyebrow}>{eyebrow}</p>}
       <h2 className="mt-2 text-2xl font-black tracking-[-0.04em] text-ink sm:text-3xl">{title}</h2>
       {lead && <p className="mt-3 text-sm leading-6 text-muted">{lead}</p>}
     </div>

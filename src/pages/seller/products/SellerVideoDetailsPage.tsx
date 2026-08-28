@@ -8,6 +8,7 @@ import { useConfirm } from '../../../components/ui/ConfirmDialog'
 import { useToast } from '../../../hooks/useToast'
 import { sellerProductsApi, type SellerVideo } from '../../../lib/sellerProductsApi'
 import { appPaths } from '../../../router/paths'
+import { ui } from '../../../components/ui/styles'
 
 export function SellerVideoDetailsPage() {
   const { videoId } = useParams()
@@ -77,7 +78,7 @@ export function SellerVideoDetailsPage() {
     return (
       <div className="space-y-5 p-5 sm:p-6">
         <EmptyState
-          action={<Link className="text-xs font-bold text-ink underline-offset-2 hover:underline" to={appPaths.videos}>Back to videos</Link>}
+          action={<Link className={ui.inlineLink} to={appPaths.videos}>Back to videos</Link>}
           message="It may have been deleted, or the link is wrong."
           title="Video not found"
         />
@@ -164,7 +165,7 @@ export function SellerVideoDetailsPage() {
                 </li>
               ))}
               {!video.products.length && (
-                <li className="rounded-xl border border-dashed border-line bg-soft/50 p-6 text-center text-[11px] text-muted">
+                <li className={`${ui.hint} p-6`}>
                   No products tagged yet.
                 </li>
               )}

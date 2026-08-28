@@ -100,7 +100,7 @@ export function VariantsStep({
           ))}
 
           {!drafts.length && (
-            <p className="rounded-xl border border-dashed border-line bg-soft/50 p-6 text-center text-[11px] text-muted">
+            <p className={`${ui.hint} p-6`}>
               No variants yet. Add one for each combination you sell.
             </p>
           )}

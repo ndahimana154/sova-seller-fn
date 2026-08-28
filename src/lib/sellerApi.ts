@@ -1,42 +1,24 @@
 import { api } from '../api/request'
 import { env } from '../config/env'
 
-export interface LocationOption {
-  id: string
-  name: string
-}
-
-export interface LocationTreeProvince extends LocationOption {
-  districts: Array<LocationTreeDistrict>
-}
-
-export interface LocationTreeDistrict extends LocationOption {
-  sectors: Array<LocationTreeSector>
-}
-
-export interface LocationTreeSector extends LocationOption {
-  cells: Array<LocationTreeCell>
-}
-
-export interface LocationTreeCell extends LocationOption {
-  villages: Array<LocationOption>
-}
-
 export interface ShopApplicationPayload {
   applicantMessage?: string
   applicantEmail: string
   applicantName: string
+  acceptTerms: boolean
+  addressHouseNumber?: string
+  addressLabel: string
+  addressLatitude?: string | null
+  addressLongitude?: string | null
+  addressPlaceId?: string | null
   description: string
   email: string
-  googleMapsLocationLink?: string
   logo?: File
   name: string
   phone: string
   rbdRegistrationDocument?: File
   representativePhone: string
-  street: string
   tinNumber: string
-  villageId: string
 }
 
 export interface SellerApplicationResponse {
@@ -50,38 +32,27 @@ export interface SellerApplicationResponse {
   }>
   shopName: string
   shop: {
+    addressHouseNumber?: string | null
+    addressLabel?: string | null
+    addressLatitude?: string | null
+    addressLongitude?: string | null
+    addressPlaceId?: string | null
     createdAt: string
     description?: string | null
     email?: string | null
-    googleMapsLocationLink?: string | null
     logo?: string | null
+    mapsUrl?: string | null
     name: string
     phone?: string | null
     rbdRegistrationDocument?: string | null
     representativeEmail?: string | null
     representativeNames?: string | null
     representativePhone?: string | null
-    street?: string | null
     tinNumber?: string | null
-    village?: {
-      cell?: { id: string; name: string } | null
-      id: string
-      name: string
-      sector?: {
-        district?: {
-          id: string
-          name: string
-          province?: { id: string; name: string } | null
-        } | null
-        id: string
-        name: string
-      } | null
-    } | null
   }
   status: 'submitted' | 'resubmitted' | 'under review' | 'returned' | 'active' | 'suspended' | 'rejected'
 }
 
-const locationPath = '/seller/shop-applications/locations'
 const sellerApiBaseUrl = env.sellerApiUrl?.replace(/\/$/, '') || ''
 
 export function sellerEndpoint(path: string) {
@@ -99,34 +70,6 @@ interface ApiEnvelope<T> {
   data: T
   message: string
   status: number
-}
-
-export function getProvinces() {
-  return getLocations('provinces', 'root')
-}
-
-export function getDistricts(provinceId: string) {
-  return getLocations('districts', provinceId)
-}
-
-export function getSectors(districtId: string) {
-  return getLocations('sectors', districtId)
-}
-
-export function getCells(sectorId: string) {
-  return getLocations('cells', sectorId)
-}
-
-export function getVillages(cellId: string) {
-  return getLocations('villages', cellId)
-}
-
-export async function getLocationTree() {
-  return (
-    await api.get<ApiEnvelope<LocationTreeProvince[]>>(sellerEndpoint('/locations/tree'), {
-      timeout: 90_000,
-    })
-  ).data
 }
 
 export async function submitShopApplication(payload: ShopApplicationPayload) {
@@ -150,15 +93,18 @@ function applicationFormData(payload: ShopApplicationPayload) {
   data.set('description', payload.description)
   data.set('email', payload.email)
   data.set('phone', payload.phone)
-  data.set('street', payload.street)
-  data.set('villageId', payload.villageId)
+  data.set('addressLabel', payload.addressLabel)
+  if (payload.addressHouseNumber) data.set('addressHouseNumber', payload.addressHouseNumber)
+  if (payload.addressPlaceId) data.set('addressPlaceId', payload.addressPlaceId)
+  if (payload.addressLatitude) data.set('addressLatitude', payload.addressLatitude)
+  if (payload.addressLongitude) data.set('addressLongitude', payload.addressLongitude)
   data.set('tinNumber', payload.tinNumber)
+  data.set('acceptTerms', String(payload.acceptTerms))
   data.set('representativeEmail', payload.applicantEmail)
   data.set('representativePhone', payload.representativePhone)
   data.set('representativeNames', payload.applicantName)
   if (payload.rbdRegistrationDocument) data.set('rbdRegistrationDocument', payload.rbdRegistrationDocument)
   if (payload.applicantMessage) data.set('applicantMessage', payload.applicantMessage)
-  if (payload.googleMapsLocationLink) data.set('googleMapsLocationLink', payload.googleMapsLocationLink)
   if (payload.logo) data.set('logo', payload.logo)
   return data
 }
@@ -171,10 +117,51 @@ export async function trackShopApplication(applicationCode: string) {
   ).data
 }
 
-async function getLocations(level: string, parentId: string) {
+export interface SellerOrderSummary {
+  awaitingPayment: boolean
+  checkoutNumber: string
+  createdAt: string
+  deliveryStatus: string | null
+  id: string
+  imageUrl: string | null
+  orderNumber: string
+  paymentStatus: string | null
+  productName: string
+  quantity: number
+  shopName: string
+  status: string
+  totalAmount: number
+  variantName: string | null
+}
+
+export interface SellerOrderDetail extends SellerOrderSummary {
+  checkoutStatus: string
+  delivery: {
+    attemptNumber: number
+    courierName: string | null
+    deliveredAt: string | null
+    status: string
+  } | null
+  deliveryAddress: string
+  deliveryNote: string | null
+  discountAmount: number
+  mapsUrl: string | null
+  recipientEmail: string | null
+  recipientName: string
+  recipientPhone: string
+  reservedQuantity: number
+  timeline: Array<{ at: string; description: string | null; eventType: string; status: string | null }>
+  unitPrice: number
+}
+
+export async function getSellerOrders() {
+  return (await api.get<ApiEnvelope<SellerOrderSummary[]>>(sellerEndpoint('/seller/orders'))).data
+}
+
+export async function getSellerOrder(orderNumber: string) {
   return (
-    await api.get<ApiEnvelope<LocationOption[]>>(sellerEndpoint(`${locationPath}/${level}`), {
-      params: { parentId },
-    })
+    await api.get<ApiEnvelope<SellerOrderDetail>>(
+      sellerEndpoint(`/seller/orders/${encodeURIComponent(orderNumber)}`),
+    )
   ).data
 }

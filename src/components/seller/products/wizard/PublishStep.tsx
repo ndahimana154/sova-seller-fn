@@ -1,7 +1,7 @@
 import { ArrowLeft, CheckCircle2, CircleDashed, Eye, EyeOff } from 'lucide-react'
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { formatPrice } from '../../../../lib/formatPrice'
+import { formatMoney } from '../../../../lib/money'
 import { sellerProductsApi } from '../../../../lib/sellerProductsApi'
 import { appPaths } from '../../../../router/paths'
 import { useToast } from '../../../../hooks/useToast'
@@ -86,7 +86,7 @@ export function PublishStep({ onBack, wizard }: { onBack: () => void; wizard: Wi
           </ul>
 
           <dl className="grid gap-3 rounded-xl border border-line bg-soft/40 p-3.5 sm:grid-cols-3">
-            <Summary label="Price from" value={formatPrice(product.price)} />
+            <Summary label="Price from" value={formatMoney(product.price)} />
             <Summary label="SKUs" value={String(product.variantCount)} />
             <Summary label="Stock" value={String(product.quantity)} />
           </dl>

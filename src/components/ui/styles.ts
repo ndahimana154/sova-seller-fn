@@ -3,7 +3,23 @@
  * `@apply` component classes so every style lives with the markup that uses it.
  */
 export const ui = {
+  /** Full-width submit used by every form inside the auth shell. */
+  authSubmit:
+    'flex min-h-10 w-full items-center justify-center rounded-xl bg-primary px-5 text-xs font-black text-white shadow-[0_10px_24px_rgb(23_26_31/0.18)] transition hover:-translate-y-0.5 hover:bg-primary-dark disabled:pointer-events-none disabled:opacity-65',
+
   card: 'rounded-2xl border border-line bg-white shadow-card',
+
+  /** Small-caps label above a heading. */
+  eyebrow: 'text-[10px] font-black uppercase tracking-[0.2em] text-muted',
+
+  /** Dashed placeholder note; callers add their own padding. */
+  hint: 'rounded-xl border border-dashed border-line bg-soft/50 text-center text-[11px] text-muted',
+
+  /** Inline text link inside body copy. */
+  inlineLink: 'text-xs font-bold text-ink underline-offset-2 hover:underline',
+
+  /** Width and rhythm for a marketing section on the public site. */
+  publicSection: 'mx-auto w-full max-w-[1320px] px-4 sm:px-6 lg:px-8 py-12 sm:py-18',
 
   dropzone:
     'flex cursor-pointer flex-col items-center justify-center gap-1.5 rounded-2xl border-2 border-dashed border-line bg-soft/40 px-5 py-7 text-center transition hover:border-ink/35 hover:bg-soft',

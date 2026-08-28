@@ -2,6 +2,7 @@ import { ArrowRight, PackageSearch, ShieldCheck, Store } from 'lucide-react'
 import { Link } from 'react-router-dom'
 import { appPaths } from '../../router/paths'
 import { Button } from '../ui'
+import { ui } from '../ui/styles'
 
 const highlights = [
   { icon: Store, label: 'One shop profile', detail: 'Your storefront on SOVA' },
@@ -14,7 +15,7 @@ export function HomeHero() {
     <section className="mx-auto w-full max-w-[1320px] px-4 sm:px-6 lg:px-8 pb-8 pt-10 sm:pt-14">
       <div className="relative overflow-hidden rounded-panel border border-line bg-canvas grid gap-10 p-6 sm:p-10 lg:grid-cols-[minmax(0,1.05fr)_minmax(0,0.95fr)] lg:p-12">
         <div className="relative z-10 max-w-xl">
-          <p className="text-[10px] font-black uppercase tracking-[0.2em] text-muted">SOVA seller portal</p>
+          <p className={ui.eyebrow}>SOVA seller portal</p>
           <h1 className="mt-3 text-[2.1rem] font-black leading-[1.05] tracking-[-0.05em] text-ink sm:text-[2.9rem]">
             The place sellers open and run their SOVA shop
           </h1>

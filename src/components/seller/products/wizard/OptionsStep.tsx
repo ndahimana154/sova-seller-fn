@@ -291,7 +291,7 @@ export function OptionsStep({
                 </div>
               ))}
               {!attributes.length && (
-                <p className="rounded-xl border border-dashed border-line bg-soft/50 p-4 text-center text-[11px] text-muted">
+                <p className={`${ui.hint} p-4`}>
                   No options yet. Add one if buyers should see it, such as Colour is Red.
                 </p>
               )}
@@ -334,7 +334,7 @@ export function OptionsStep({
               </div>
             ))}
             {!options.length && (
-              <p className="rounded-xl border border-dashed border-line bg-soft/50 p-4 text-center text-[11px] text-muted">
+              <p className={`${ui.hint} p-4`}>
                 No options yet. Add one, such as Size or Colour.
               </p>
             )}

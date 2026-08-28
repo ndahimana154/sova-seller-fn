@@ -6,7 +6,7 @@ import { AttributeTags } from '../../../components/ui/AttributeTags'
 import { Badge, EmptyState } from '../../../components/ui'
 import { PageTitle, StatusBadge, mediaUrl } from '../../../components/seller/products/ProductPageUi'
 import { useSellerProduct } from '../../../components/seller/products/useSellerProduct'
-import { formatPrice } from '../../../lib/formatPrice'
+import { formatMoney } from '../../../lib/money'
 import type { ProductMedia, ProductVariant, SellerProduct } from '../../../lib/sellerProductsApi'
 import { appPaths } from '../../../router/paths'
 import { ui } from '../../../components/ui/styles'
@@ -56,9 +56,9 @@ export function SellerProductDetailsPage() {
               <div>
                 <p className="text-[10px] font-semibold uppercase tracking-[0.08em] text-muted">Price</p>
                 <p className="mt-1 flex flex-wrap items-baseline gap-2">
-                  <strong className="text-2xl font-black text-ink">{formatPrice(product.price)}</strong>
+                  <strong className="text-2xl font-black text-ink">{formatMoney(product.price)}</strong>
                   {product.maxPrice > product.price && (
-                    <span className="text-xs text-muted">to {formatPrice(product.maxPrice)}</span>
+                    <span className="text-xs text-muted">to {formatMoney(product.maxPrice)}</span>
                   )}
                 </p>
               </div>
@@ -201,13 +201,13 @@ function attributeMap(variant: ProductVariant): Record<string, string> {
 function PriceLine({ variant }: { variant: ProductVariant }) {
   return (
     <span className="flex flex-wrap items-baseline gap-2">
-      <strong className="text-base font-black text-ink">{formatPrice(variant.salePrice)}</strong>
+      <strong className="text-base font-black text-ink">{formatMoney(variant.salePrice)}</strong>
       {variant.discountPercent ? (
         <>
-          <span className="text-xs text-muted line-through">{formatPrice(variant.price)}</span>
+          <span className="text-xs text-muted line-through">{formatMoney(variant.price)}</span>
           <Badge tone="accent">−{variant.discountPercent}%</Badge>
           <span className="text-[10px] font-semibold text-green-700">
-            Saves {formatPrice(variant.price - variant.salePrice)}
+            Saves {formatMoney(variant.price - variant.salePrice)}
           </span>
         </>
       ) : null}

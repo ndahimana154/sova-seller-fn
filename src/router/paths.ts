@@ -13,6 +13,8 @@ export const appPaths = {
   categories: '/dashboard/product-categories',
   videos: '/dashboard/product-videos',
   videoDetails: (id: string) => `/dashboard/product-videos/${id}`,
+  orders: '/dashboard/orders',
+  orderDetails: (orderNumber: string) => `/dashboard/orders/${orderNumber}`,
   settings: '/dashboard/settings',
   storefront: env.storefrontUrl,
 } as const

@@ -4,6 +4,7 @@ import { normalizeApiError } from '../../api/errors'
 import { requestLoginOtp } from '../../lib/sellerAuth'
 import { OtpInput } from '../ui/OtpInput'
 import { AuthError, AuthField } from './AuthField'
+import { ui } from '../ui/styles'
 
 const OTP_LENGTH = 6
 
@@ -75,7 +76,7 @@ export function CodeSignInForm({ onSignIn, onUsePassword }: CodeSignInFormProps)
             value={otp}
           />
           <button
-            className="text-xs font-bold text-ink underline-offset-2 hover:underline"
+            className={ui.inlineLink}
             onClick={() => { setSent(false); setOtp(''); setError(''); setMessage('') }}
             type="button"
           >
@@ -84,7 +85,7 @@ export function CodeSignInForm({ onSignIn, onUsePassword }: CodeSignInFormProps)
         </>
       )}
       <AuthError message={error} />
-      <button className="flex min-h-10 w-full items-center justify-center rounded-xl bg-primary px-5 text-xs font-black text-white shadow-[0_10px_24px_rgb(23_26_31/0.18)] transition hover:-translate-y-0.5 hover:bg-primary-dark disabled:pointer-events-none disabled:opacity-65" disabled={submitting || (sent && otp.length < OTP_LENGTH)} type="submit">
+      <button className={ui.authSubmit} disabled={submitting || (sent && otp.length < OTP_LENGTH)} type="submit">
         {submitting ? 'Please wait…' : sent ? 'Verify and sign in' : 'Email me a code'}
       </button>
       <button className="text-xs font-bold text-muted transition hover:text-ink hover:underline w-full" onClick={onUsePassword} type="button">

@@ -3,10 +3,11 @@ import { Link } from 'react-router-dom'
 import { env } from '../../config/env'
 import { appPaths } from '../../router/paths'
 import { Brand, Button } from '../ui'
+import { ui } from '../ui/styles'
 
 export function HomeCallToAction() {
   return (
-    <section className="mx-auto w-full max-w-[1320px] px-4 sm:px-6 lg:px-8 py-12 sm:py-18">
+    <section className={ui.publicSection}>
       <div className="rounded-panel bg-ink p-8 text-white sm:p-12">
         <div className="flex flex-wrap items-center justify-between gap-8">
           <div className="max-w-xl">

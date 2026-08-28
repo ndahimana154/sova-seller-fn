@@ -174,7 +174,7 @@ function Stat({
 
 function Empty({ children }: { children: React.ReactNode }) {
   return (
-    <p className="rounded-xl border border-dashed border-line bg-soft/50 p-4 text-center text-[11px] text-muted">
+    <p className={`${ui.hint} p-4`}>
       {children}
     </p>
   )
