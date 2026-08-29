@@ -52,7 +52,7 @@ export function SellerOrdersPage() {
       {order.variantName && <p className="mt-0.5 truncate text-[10px] text-muted">{order.variantName}</p>}
     </div>,
     <span className="tabular-nums">× {order.quantity}</span>,
-    <OrderStatusBadge deliveryStatus={order.deliveryStatus} status={order.status} />,
+    <OrderStatusBadge status={order.status} />,
     <span className="inline-flex whitespace-nowrap rounded-full bg-soft px-2.5 py-1 text-[10px] font-semibold text-muted">
       {formatDateTime(order.createdAt)}
     </span>,

@@ -2,30 +2,28 @@ import type { SellerOrderSummary } from '../../../lib/sellerApi'
 
 export type OrderBucket =
   | ''
-  | 'to_pay'
+  | 'awaiting_packing'
   | 'packing'
   | 'in_transit'
-  | 'shipped'
-  | 'cancelled'
+  | 'delivered'
+  | 'refunded'
 
-const IN_TRANSIT = ['picked_up', 'out_for_delivery']
-
-/** Which stage an order sits at, from its order, payment and delivery states. */
+/** Sellers only ever see confirmed orders, so the status is the bucket. */
 export function bucketOf(order: SellerOrderSummary): Exclude<OrderBucket, ''> {
-  if (order.status === 'cancelled') return 'cancelled'
-  if (order.status === 'completed' || order.deliveryStatus === 'delivered') return 'shipped'
-  if (order.awaitingPayment) return 'to_pay'
-  if (order.deliveryStatus && IN_TRANSIT.includes(order.deliveryStatus)) return 'in_transit'
-  return 'packing'
+  if (order.status === 'refunded') return 'refunded'
+  if (order.status === 'delivered') return 'delivered'
+  if (order.status === 'in_transit') return 'in_transit'
+  if (order.status === 'packing') return 'packing'
+  return 'awaiting_packing'
 }
 
 export const BUCKET_OPTIONS = [
   { label: 'All orders', value: '' },
-  { label: 'Awaiting payment', value: 'to_pay' },
-  { label: 'To pack', value: 'packing' },
+  { label: 'Await packing', value: 'awaiting_packing' },
+  { label: 'Packing', value: 'packing' },
   { label: 'In transit', value: 'in_transit' },
-  { label: 'Shipped', value: 'shipped' },
-  { label: 'Cancelled', value: 'cancelled' },
+  { label: 'Delivered', value: 'delivered' },
+  { label: 'Refunded', value: 'refunded' },
 ]
 
 export interface OrderFilterState {

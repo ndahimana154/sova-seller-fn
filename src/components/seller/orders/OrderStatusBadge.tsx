@@ -13,13 +13,11 @@ const TONE: Record<string, string> = {
 
 /** The delivery state is the more specific truth when one exists. */
 export function OrderStatusBadge({
-  deliveryStatus,
   status,
 }: {
-  deliveryStatus?: string | null
   status: string
 }) {
-  const shown = deliveryStatus ?? status
+  const shown = status
   return (
     <span className={`inline-flex rounded-full px-2.5 py-1 text-[10px] font-bold capitalize ${TONE[shown] ?? 'bg-soft text-muted'}`}>
       {shown.replaceAll('_', ' ')}

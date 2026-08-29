@@ -119,9 +119,7 @@ export async function trackShopApplication(applicationCode: string) {
 
 export interface SellerOrderSummary {
   awaitingPayment: boolean
-  checkoutNumber: string
   createdAt: string
-  deliveryStatus: string | null
   id: string
   imageUrl: string | null
   orderNumber: string
@@ -135,13 +133,9 @@ export interface SellerOrderSummary {
 }
 
 export interface SellerOrderDetail extends SellerOrderSummary {
-  checkoutStatus: string
-  delivery: {
-    attemptNumber: number
-    courierName: string | null
-    deliveredAt: string | null
-    status: string
-  } | null
+  amountDue: number
+  amountPaid: number
+  courierName: string | null
   deliveryAddress: string
   deliveryNote: string | null
   discountAmount: number
@@ -156,6 +150,15 @@ export interface SellerOrderDetail extends SellerOrderSummary {
 
 export async function getSellerOrders() {
   return (await api.get<ApiEnvelope<SellerOrderSummary[]>>(sellerEndpoint('/seller/orders'))).data
+}
+
+export async function markOrderPacked(orderNumber: string) {
+  return (
+    await api.put<ApiEnvelope<SellerOrderDetail>, undefined>(
+      sellerEndpoint(`/seller/orders/${encodeURIComponent(orderNumber)}/packed`),
+      undefined,
+    )
+  ).data
 }
 
 export async function getSellerOrder(orderNumber: string) {

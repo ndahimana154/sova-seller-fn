@@ -1,18 +1,36 @@
-import { ChevronLeft, ExternalLink, Mail, MapPin, Phone, Truck } from 'lucide-react'
+import { ExternalLink, Mail, MapPin, Phone, Truck } from 'lucide-react'
 import { useEffect, useState } from 'react'
 import { Link, useParams } from 'react-router-dom'
 import { normalizeApiError } from '../../../api/errors'
+import { PackageCheck } from 'lucide-react'
 import { OrderStatusBadge } from '../../../components/seller/orders/OrderStatusBadge'
+import { Button } from '../../../components/ui'
+import { useToast } from '../../../hooks/useToast'
 import { ui } from '../../../components/ui/styles'
 import { formatDateTime } from '../../../lib/formatDate'
 import { formatMoney } from '../../../lib/money'
-import { getSellerOrder, type SellerOrderDetail } from '../../../lib/sellerApi'
+import { markOrderPacked, getSellerOrder, type SellerOrderDetail } from '../../../lib/sellerApi'
 
 export function SellerOrderDetailsPage() {
   const { orderNumber } = useParams()
+  const toast = useToast()
   const [order, setOrder] = useState<SellerOrderDetail | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
+  const [packing, setPacking] = useState(false)
+
+  async function markPacked() {
+    if (!orderNumber) return
+    setPacking(true)
+    try {
+      setOrder(await markOrderPacked(orderNumber))
+      toast.success('Marked as packed. A courier can now collect it.')
+    } catch (cause) {
+      toast.error(cause)
+    } finally {
+      setPacking(false)
+    }
+  }
 
   useEffect(() => {
     if (!orderNumber) return
@@ -45,17 +63,18 @@ export function SellerOrderDetailsPage() {
           <div>
             <h1 className="text-base font-black text-ink">{order.orderNumber}</h1>
             <p className="mt-1 text-[11px] text-muted">
-              Placed {formatDateTime(order.createdAt)} · Checkout {order.checkoutNumber}
+              Placed {formatDateTime(order.createdAt)}
             </p>
           </div>
-          <OrderStatusBadge deliveryStatus={order.deliveryStatus} status={order.status} />
+          <div className="flex flex-wrap items-center gap-2">
+            <OrderStatusBadge status={order.status} />
+            {order.status === 'awaiting_packing' && (
+              <Button disabled={packing} onClick={markPacked}>
+                <PackageCheck size={13} /> {packing ? 'Saving…' : 'Mark as packed'}
+              </Button>
+            )}
+          </div>
         </div>
-
-        {order.awaitingPayment && (
-          <p className="mt-4 rounded-xl bg-amber-50 px-3.5 py-2.5 text-[11px] font-semibold text-amber-800">
-            The buyer has not paid yet. Do not pack this order until the payment is confirmed.
-          </p>
-        )}
 
         <div className="mt-4 border-t border-line pt-4">
           <p className="text-xs font-bold text-ink">{order.productName}</p>
@@ -71,6 +90,22 @@ export function SellerOrderDetailsPage() {
               <span className="text-xs font-black text-ink">Order total</span>
               <strong className="text-sm font-black text-ink">{formatMoney(order.totalAmount)}</strong>
             </div>
+            <div className="mt-2 space-y-1.5 border-t border-line pt-2">
+              <Row label="Paid so far" value={formatMoney(order.amountPaid)} />
+              <div className="flex items-center justify-between">
+                <span className="text-[11px] text-muted">Outstanding</span>
+                <strong
+                  className={`text-[11px] font-bold ${order.amountDue > 0 ? 'text-amber-700' : 'text-emerald-700'}`}
+                >
+                  {order.amountDue > 0 ? formatMoney(order.amountDue) : 'Settled'}
+                </strong>
+              </div>
+              {order.amountDue > 0 && order.amountPaid > 0 && (
+                <p className="text-[10px] leading-4 text-muted">
+                  A deposit has been paid. The balance is collected on delivery.
+                </p>
+              )}
+            </div>
           </dl>
         </div>
       </section>
@@ -80,16 +115,7 @@ export function SellerOrderDetailsPage() {
           <h2 className="flex items-center gap-1.5 text-xs font-black uppercase tracking-[0.12em] text-muted">
             <Truck size={13} /> Delivery
           </h2>
-          {order.delivery ? (
-            <div className="mt-3 space-y-1.5 text-[11px] text-muted">
-              <OrderStatusBadge status={order.delivery.status} />
-              <p>Courier: <strong className="text-ink">{order.delivery.courierName ?? 'Not assigned'}</strong></p>
-              <p>Attempt {order.delivery.attemptNumber}</p>
-              {order.delivery.deliveredAt && <p>Delivered {formatDateTime(order.delivery.deliveredAt)}</p>}
-            </div>
-          ) : (
-            <p className="mt-3 text-[11px] text-muted">A courier is assigned once SOVA confirms the payment.</p>
-          )}
+          
         </section>
 
         <section className={`${ui.card} p-5`}>
