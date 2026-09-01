@@ -2,7 +2,7 @@ import { ArrowDownLeft, ArrowUpRight, Plus } from 'lucide-react'
 import { useCallback, useEffect, useState, type FormEvent } from 'react'
 import { Button } from '../../ui/Button'
 import { DataTable } from '../../ui/DataTable'
-import { Modal } from '../../ui/Modal'
+import { Modal, ModalFooter } from '../../ui/Modal'
 import { Select } from '../../ui/Select'
 import { useToast } from '../../../hooks/useToast'
 import { Field } from './ProductPageUi'
@@ -192,7 +192,8 @@ function StockForm({
   const [type, setType] = useState<InventoryMovementType>('STOCK_IN')
   const variant = variants.find((item) => item.id === target)
   return (
-    <form className="space-y-4" onSubmit={(event) => onSubmit(event, type)}>
+    <>
+      <form className="space-y-4" id="stock-form" onSubmit={(event) => onSubmit(event, type)}>
       <div className="space-y-1.5">
         <Field label="Variant">
           <Select
@@ -222,9 +223,12 @@ function StockForm({
       <Field label="Reason">
         <input name="reason" placeholder="e.g. Supplier delivery" required />
       </Field>
-      <Button block className="mt-1" type="submit">
-        Record movement
-      </Button>
-    </form>
+      </form>
+      <ModalFooter>
+        <Button block form="stock-form" type="submit">
+          Record movement
+        </Button>
+      </ModalFooter>
+    </>
   )
 }

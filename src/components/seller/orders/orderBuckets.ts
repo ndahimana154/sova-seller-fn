@@ -3,7 +3,7 @@ import type { SellerOrderSummary } from '../../../lib/sellerApi'
 export type OrderBucket =
   | ''
   | 'awaiting_packing'
-  | 'packing'
+  | 'awaiting_pickup'
   | 'in_transit'
   | 'delivered'
   | 'refunded'
@@ -13,14 +13,14 @@ export function bucketOf(order: SellerOrderSummary): Exclude<OrderBucket, ''> {
   if (order.status === 'refunded') return 'refunded'
   if (order.status === 'delivered') return 'delivered'
   if (order.status === 'in_transit') return 'in_transit'
-  if (order.status === 'packing') return 'packing'
+  if (order.status === 'awaiting_pickup') return 'awaiting_pickup'
   return 'awaiting_packing'
 }
 
 export const BUCKET_OPTIONS = [
   { label: 'All orders', value: '' },
   { label: 'Await packing', value: 'awaiting_packing' },
-  { label: 'Packing', value: 'packing' },
+  { label: 'Awaiting pickup', value: 'awaiting_pickup' },
   { label: 'In transit', value: 'in_transit' },
   { label: 'Delivered', value: 'delivered' },
   { label: 'Refunded', value: 'refunded' },

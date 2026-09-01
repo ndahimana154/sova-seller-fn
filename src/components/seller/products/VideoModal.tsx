@@ -1,6 +1,6 @@
 import { Check, Search, Upload, X } from 'lucide-react'
 import { useEffect, useMemo, useState, type FormEvent } from 'react'
-import { Badge, Button, Modal } from '../../ui'
+import { Badge, Button, Modal, ModalFooter } from '../../ui'
 import { useToast } from '../../../hooks/useToast'
 import {
   sellerProductsApi,
@@ -47,7 +47,7 @@ export function VideoModal({ busy = false, onClose, onSubmit, video }: {
 
   return (
     <Modal onClose={onClose} size="lg" title={video ? 'Edit video' : 'Add a video'}>
-      <form className="space-y-4" onSubmit={submit}>
+      <form className="space-y-4" id="video-form" onSubmit={submit}>
         {video ? (
           <video
             className="max-h-56 w-full rounded-xl border border-line bg-soft object-contain"
@@ -82,10 +82,12 @@ export function VideoModal({ busy = false, onClose, onSubmit, video }: {
 
         <ProductPicker onChange={setPicked} picked={picked} />
 
-        <Button block disabled={busy} type="submit">
+      </form>
+      <ModalFooter>
+        <Button block disabled={busy} form="video-form" type="submit">
           {video ? 'Save changes' : 'Upload video'}
         </Button>
-      </form>
+      </ModalFooter>
     </Modal>
   )
 }

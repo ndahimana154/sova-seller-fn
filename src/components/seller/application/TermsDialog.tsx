@@ -24,7 +24,7 @@ export function TermsDialog({ onClose }: { onClose: () => void }) {
       subtitle={terms ? `Version ${terms.version}` : undefined}
       title="SOVA terms and conditions"
     >
-      <div className="max-h-[60vh] overflow-y-auto px-1">
+      <div className="px-1">
         {loading && <p className="text-xs text-muted">Loading…</p>}
         {!loading && !terms && <p className="text-xs text-muted">The terms have not been published yet.</p>}
         {terms && <RichTextView html={terms.body} />}

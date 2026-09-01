@@ -4,10 +4,12 @@ import { Link, useParams } from 'react-router-dom'
 import { normalizeApiError } from '../../../api/errors'
 import { PackageCheck } from 'lucide-react'
 import { OrderStatusBadge } from '../../../components/seller/orders/OrderStatusBadge'
+import { PackOrderDialog } from '../../../components/seller/orders/PackOrderDialog'
 import { Button } from '../../../components/ui'
 import { useToast } from '../../../hooks/useToast'
 import { ui } from '../../../components/ui/styles'
 import { formatDateTime } from '../../../lib/formatDate'
+import { mediaUrl } from '../../../lib/mediaUrl'
 import { formatMoney } from '../../../lib/money'
 import { markOrderPacked, getSellerOrder, type SellerOrderDetail } from '../../../lib/sellerApi'
 
@@ -18,12 +20,14 @@ export function SellerOrderDetailsPage() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
   const [packing, setPacking] = useState(false)
+  const [packDialog, setPackDialog] = useState(false)
 
-  async function markPacked() {
+  async function markPacked(input: { note?: string; proof: File }) {
     if (!orderNumber) return
     setPacking(true)
     try {
-      setOrder(await markOrderPacked(orderNumber))
+      setOrder(await markOrderPacked(orderNumber, input))
+      setPackDialog(false)
       toast.success('Marked as packed. A courier can now collect it.')
     } catch (cause) {
       toast.error(cause)
@@ -58,6 +62,14 @@ export function SellerOrderDetailsPage() {
 
   return (
     <div className="space-y-5 p-5 sm:p-6">
+      {packDialog && (
+        <PackOrderDialog
+          busy={packing}
+          onClose={() => setPackDialog(false)}
+          onConfirm={markPacked}
+          orderNumber={order.orderNumber}
+        />
+      )}
       <section className={`${ui.card} p-5`}>
         <div className="flex flex-wrap items-start justify-between gap-3">
           <div>
@@ -69,8 +81,8 @@ export function SellerOrderDetailsPage() {
           <div className="flex flex-wrap items-center gap-2">
             <OrderStatusBadge status={order.status} />
             {order.status === 'awaiting_packing' && (
-              <Button disabled={packing} onClick={markPacked}>
-                <PackageCheck size={13} /> {packing ? 'Saving…' : 'Mark as packed'}
+              <Button onClick={() => setPackDialog(true)}>
+                <PackageCheck size={13} /> Mark as packed
               </Button>
             )}
           </div>
@@ -157,7 +169,24 @@ export function SellerOrderDetailsPage() {
                 <p className="text-[11px] font-semibold text-ink">
                   {entry.description ?? entry.eventType.replaceAll('_', ' ')}
                 </p>
-                <p className="mt-0.5 text-[10px] text-muted">{formatDateTime(entry.at)}</p>
+                <p className="mt-0.5 text-[10px] text-muted">
+                  {formatDateTime(entry.at)}
+                  {entry.recordedBy ? ` · by ${entry.recordedBy}` : ''}
+                </p>
+                {entry.note && (
+                  <p className="mt-1 rounded-lg bg-soft px-2 py-1.5 text-[10px] leading-4 text-muted">
+                    {entry.note}
+                  </p>
+                )}
+                {entry.proofImage && (
+                  <a href={mediaUrl(entry.proofImage)} rel="noreferrer" target="_blank">
+                    <img
+                      alt="Photo recorded at this step"
+                      className="mt-1.5 max-h-32 rounded-lg border border-line object-cover"
+                      src={mediaUrl(entry.proofImage)}
+                    />
+                  </a>
+                )}
               </div>
             </li>
           ))}

@@ -2,6 +2,6 @@ export { Button, buttonClass, type ButtonSize, type ButtonVariant } from './Butt
 export { Badge, Card, CardHeader, EmptyState, SectionHeading } from './Surface'
 export { Toggle } from './Toggle'
 export { Brand } from './Brand'
-export { Modal } from './Modal'
+export { Modal, ModalFooter } from './Modal'
 export { OtpInput } from './OtpInput'
 export { Select } from './Select'

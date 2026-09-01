@@ -144,7 +144,7 @@ export interface SellerOrderDetail extends SellerOrderSummary {
   recipientName: string
   recipientPhone: string
   reservedQuantity: number
-  timeline: Array<{ at: string; description: string | null; eventType: string; status: string | null }>
+  timeline: Array<{ at: string; description: string | null; eventType: string; note: string | null; proofImage: string | null; recordedBy: string | null; status: string | null }>
   unitPrice: number
 }
 
@@ -152,11 +152,17 @@ export async function getSellerOrders() {
   return (await api.get<ApiEnvelope<SellerOrderSummary[]>>(sellerEndpoint('/seller/orders'))).data
 }
 
-export async function markOrderPacked(orderNumber: string) {
+export async function markOrderPacked(
+  orderNumber: string,
+  input: { note?: string; proof: File },
+) {
+  const form = new FormData()
+  form.append('proof', input.proof)
+  if (input.note) form.append('note', input.note)
   return (
-    await api.put<ApiEnvelope<SellerOrderDetail>, undefined>(
+    await api.put<ApiEnvelope<SellerOrderDetail>, FormData>(
       sellerEndpoint(`/seller/orders/${encodeURIComponent(orderNumber)}/packed`),
-      undefined,
+      form,
     )
   ).data
 }
