@@ -1,4 +1,4 @@
-import { ArrowLeft, ArrowRight, Star, Trash2, Upload } from 'lucide-react'
+import { ArrowLeft, ArrowRight, ChevronLeft, ChevronRight, Star, Trash2, Upload } from 'lucide-react'
 import { useRef, useState } from 'react'
 import { sellerProductsApi, type ProductMedia } from '../../../../lib/sellerProductsApi'
 import { useToast } from '../../../../hooks/useToast'
@@ -41,6 +41,25 @@ export function MediaStep({
     }
   }
 
+  /** Moves one photo within its own group and persists the whole new order. */
+  async function move(items: ProductMedia[], mediaId: string, offset: number) {
+    const from = items.findIndex((item) => item.id === mediaId)
+    const to = from + offset
+    if (from < 0 || to < 0 || to >= items.length) return
+    const next = [...items]
+    const [moved] = next.splice(from, 1)
+    next.splice(to, 0, moved)
+    // Position is global across the product, and the server wants every id.
+    // Rebuild the full list in place: this group's slots take the new order,
+    // everything else keeps exactly where it was.
+    const groupIds = new Set(items.map((item) => item.id))
+    let taken = 0
+    const full = media.map((item) =>
+      groupIds.has(item.id) ? next[taken++].id : item.id,
+    )
+    await run(() => sellerProductsApi.reorderMedia(product!.id, full))
+  }
+
   async function upload(files: FileList | null) {
     if (!files?.length) return
     await run(async () => {
@@ -54,8 +73,8 @@ export function MediaStep({
   return (
     <div className="space-y-5">
       <FormSection
-        subtitle="Photos attached to a variant show when a buyer picks it. Everything here is the product's own gallery, used as the default when a variant has none of its own."
-        title="Product photos"
+        subtitle="Shared photos and video for the whole product, used when a version has none of its own."
+        title="Product gallery"
       >
         <div className="space-y-4">
           <StepIssues issues={issues} />
@@ -68,7 +87,7 @@ export function MediaStep({
           >
             <Upload className="text-muted" size={18} />
             <span className="text-xs font-bold text-ink">Add product photos</span>
-            <span className="text-[11px] leading-5 text-muted">Images and MP4 video. The starred image is the cover buyers see first.</span>
+            <span className="text-[11px] leading-5 text-muted">Extra photos or an MP4 video for the whole product. Version photos are managed below.</span>
           </button>
           <input
             accept="image/*,video/mp4"
@@ -83,6 +102,7 @@ export function MediaStep({
             busy={busy}
             items={shared}
             onDelete={(id) => void run(() => sellerProductsApi.deleteMedia(product.id, id))}
+            onMove={(id, offset) => void move(shared, id, offset)}
             onPrimary={(id) => void run(() => sellerProductsApi.updateMedia(product.id, id, { isPrimary: true }))}
           />
           {!shared.length && (
@@ -93,11 +113,13 @@ export function MediaStep({
         </div>
       </FormSection>
 
-      {variants.filter((variant) => !variant.isPlaceholder).length > 0 && (
-        <FormSection subtitle="Preview only — add or remove these on the Variants step." title="By variant">
+      {variants.length > 0 && (
+        <FormSection
+          subtitle="Uploaded on the Versions step. Star the one buyers should see first, reorder them, or remove one here."
+          title="By version"
+        >
           <div className="space-y-4">
             {variants
-              .filter((variant) => !variant.isPlaceholder)
               .map((variant) => {
                 const own = media.filter((item) => item.variantId === variant.id)
                 return (
@@ -108,9 +130,15 @@ export function MediaStep({
                       {variant.isDefault && <Badge tone="info">Default</Badge>}
                     </p>
                     {own.length ? (
-                      <MediaGrid caption={(item) => `${variant.name?.trim() || variant.sku} · ${item.mediaType === 'VIDEO' ? 'Video' : 'Photo'}`} items={own} readOnly />
+                      <MediaGrid
+                        busy={busy}
+                        items={own}
+                        onDelete={(mediaId) => void run(() => sellerProductsApi.deleteMedia(product!.id, mediaId))}
+                        onMove={(mediaId, offset) => void move(own, mediaId, offset)}
+                        onPrimary={(mediaId) => void run(() => sellerProductsApi.updateMedia(product!.id, mediaId, { isPrimary: true }))}
+                      />
                     ) : (
-                      <p className="text-[11px] leading-5 text-muted">No photos of its own — the product gallery above is used instead.</p>
+                      <p className="text-[11px] leading-5 text-muted">No photos yet — add them on the Versions step.</p>
                     )}
                   </div>
                 )
@@ -134,18 +162,19 @@ export function MediaStep({
   )
 }
 
-function MediaGrid({ busy = false, caption, items, onDelete, onPrimary, readOnly = false }: {
+function MediaGrid({ busy = false, caption, items, onDelete, onMove, onPrimary, readOnly = false }: {
   busy?: boolean
   caption?: (item: ProductMedia) => string
   items: ProductMedia[]
   onDelete?: (mediaId: string) => void
+  onMove?: (mediaId: string, offset: number) => void
   onPrimary?: (mediaId: string) => void
   readOnly?: boolean
 }) {
   if (!items.length) return null
   return (
     <div className="grid grid-cols-2 gap-3 sm:grid-cols-4 lg:grid-cols-6">
-      {items.map((item) => (
+      {items.map((item, index) => (
         <figure className={`group ${ui.mediaTile}`} key={item.id}>
           {caption && <figcaption className={ui.mediaCaption}>{caption(item)}</figcaption>}
           {item.mediaType === 'VIDEO'
@@ -154,6 +183,28 @@ function MediaGrid({ busy = false, caption, items, onDelete, onPrimary, readOnly
           {item.isPrimary && <span className={ui.mediaBadge}><Star size={9} /> Cover</span>}
           {!readOnly && (
             <div className={ui.mediaOverlay}>
+              {onMove && (
+                <>
+                  <button
+                    aria-label="Move earlier"
+                    className={ui.mediaAction}
+                    disabled={busy || index === 0}
+                    onClick={() => onMove(item.id, -1)}
+                    type="button"
+                  >
+                    <ChevronLeft size={12} />
+                  </button>
+                  <button
+                    aria-label="Move later"
+                    className={ui.mediaAction}
+                    disabled={busy || index === items.length - 1}
+                    onClick={() => onMove(item.id, 1)}
+                    type="button"
+                  >
+                    <ChevronRight size={12} />
+                  </button>
+                </>
+              )}
               {!item.isPrimary && item.mediaType === 'IMAGE' && (
                 <button
                   aria-label="Use as cover"

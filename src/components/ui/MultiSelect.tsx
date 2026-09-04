@@ -1,5 +1,5 @@
 import { Check, ChevronDown, Search } from 'lucide-react'
-import { useMemo, useRef, useState } from 'react'
+import { useLayoutEffect, useMemo, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
 import { useAnchoredPosition } from './useAnchoredPosition'
 import type { SelectOption } from './Select'
@@ -11,6 +11,8 @@ interface MultiSelectProps {
   onChange: (values: string[]) => void
   options: SelectOption[]
   placeholder?: string
+  /** Forces the filter box on regardless of how many options there are. */
+  searchable?: boolean
   searchThreshold?: number
   value: string[]
   variant?: 'bare' | 'boxed'
@@ -23,17 +25,24 @@ export function MultiSelect({
   onChange,
   options,
   placeholder = 'Select options',
+  searchable: forceSearchable = false,
   searchThreshold = 8,
   value,
   variant = 'boxed',
 }: MultiSelectProps) {
   const triggerRef = useRef<HTMLButtonElement>(null)
   const popupRef = useRef<HTMLDivElement>(null)
+  const anchorRef = useRef<HTMLElement | null>(null)
   const [open, setOpen] = useState(false)
   const [query, setQuery] = useState('')
 
+  useLayoutEffect(() => {
+    const trigger = triggerRef.current
+    anchorRef.current = trigger?.closest<HTMLElement>('[data-field-control]') ?? trigger
+  }, [open])
+
   const chosen = options.filter((option) => value.includes(option.value))
-  const searchable = options.length >= searchThreshold
+  const searchable = forceSearchable || options.length >= searchThreshold
   const visible = useMemo(() => {
     const needle = query.trim().toLowerCase()
     if (!needle) return options
@@ -41,7 +50,7 @@ export function MultiSelect({
   }, [options, query])
 
   const position = useAnchoredPosition({
-    anchorRef: triggerRef,
+    anchorRef,
     floatingRef: popupRef,
     matchWidth: true,
     onDismiss: () => close(),
@@ -69,7 +78,7 @@ export function MultiSelect({
     : 'min-h-10 rounded-xl border border-line bg-white px-3 text-xs focus:border-ink'
 
   return (
-    <div className={`relative ${className}`}>
+    <div className={`relative flex min-w-0 ${variant === 'bare' ? 'flex-1' : ''} ${className}`}>
       <button
         aria-expanded={open}
         aria-haspopup="listbox"

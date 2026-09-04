@@ -15,6 +15,7 @@ export const appPaths = {
   videoDetails: (id: string) => `/dashboard/product-videos/${id}`,
   orders: '/dashboard/orders',
   orderDetails: (orderNumber: string) => `/dashboard/orders/${orderNumber}`,
+  wallet: '/dashboard/wallet',
   settings: '/dashboard/settings',
   storefront: env.storefrontUrl,
 } as const

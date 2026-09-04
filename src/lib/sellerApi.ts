@@ -24,6 +24,8 @@ export interface ShopApplicationPayload {
 export interface SellerApplicationResponse {
   applicationCode: string
   canRenew: boolean
+  /** Only returned after a verified track. Spend it to edit the application. */
+  verificationToken?: string
   history: Array<{
     applicantMessage?: string | null
     createdAt: string
@@ -77,8 +79,13 @@ export async function submitShopApplication(payload: ShopApplicationPayload) {
   return (await api.post<ApiEnvelope<SellerApplicationResponse>, FormData>(sellerEndpoint('/seller/shop-applications'), data)).data
 }
 
-export async function renewShopApplication(applicationCode: string, payload: ShopApplicationPayload) {
+export async function renewShopApplication(
+  applicationCode: string,
+  payload: ShopApplicationPayload,
+  verificationToken: string,
+) {
   const data = applicationFormData(payload)
+  data.set('verificationToken', verificationToken)
   return (
     await api.put<ApiEnvelope<SellerApplicationResponse>, FormData>(
       sellerEndpoint(`/seller/shop-applications/${encodeURIComponent(applicationCode)}`),
@@ -109,10 +116,30 @@ function applicationFormData(payload: ShopApplicationPayload) {
   return data
 }
 
-export async function trackShopApplication(applicationCode: string) {
+export interface TrackingRequested {
+  email: string
+  expiresAt: string
+}
+
+/** Emails a one-time code to the shop. No application details come back yet. */
+export async function requestApplicationTracking(applicationCode: string) {
   return (
-    await api.get<ApiEnvelope<SellerApplicationResponse>>(
-      sellerEndpoint(`/seller/shop-applications/${encodeURIComponent(applicationCode)}`),
+    await api.post<ApiEnvelope<TrackingRequested>, undefined>(
+      sellerEndpoint(
+        `/seller/shop-applications/${encodeURIComponent(applicationCode)}/track/request`,
+      ),
+      undefined,
+    )
+  ).data
+}
+
+export async function trackShopApplication(applicationCode: string, otp: string) {
+  return (
+    await api.post<ApiEnvelope<SellerApplicationResponse>, { otp: string }>(
+      sellerEndpoint(
+        `/seller/shop-applications/${encodeURIComponent(applicationCode)}/track`,
+      ),
+      { otp },
     )
   ).data
 }
@@ -173,4 +200,39 @@ export async function getSellerOrder(orderNumber: string) {
       sellerEndpoint(`/seller/orders/${encodeURIComponent(orderNumber)}`),
     )
   ).data
+}
+
+export interface SellerWalletEntry {
+  amount: number
+  at: string
+  balanceAfter: number
+  description: string
+  entryType: string
+  id: string
+  orderNumber: string | null
+}
+
+export interface SellerPayoutEntry {
+  amount: number
+  id: string
+  methodName: string
+  paidAt: string | null
+  recipientAccount: string
+  reference: string
+  reversalReason: string | null
+  status: string
+  transactionReference: string | null
+}
+
+export interface SellerWallet {
+  balance: number
+  entries: SellerWalletEntry[]
+  payouts: SellerPayoutEntry[]
+  totalEarned: number
+  totalPaidOut: number
+  totalRefunded: number
+}
+
+export async function getSellerWallet() {
+  return (await api.get<ApiEnvelope<SellerWallet>>(sellerEndpoint('/seller/wallet'))).data
 }

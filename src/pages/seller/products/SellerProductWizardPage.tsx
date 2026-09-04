@@ -3,7 +3,6 @@ import { OptionsStep } from '../../../components/seller/products/wizard/OptionsS
 import { BasicsStep } from '../../../components/seller/products/wizard/BasicsStep'
 import { MediaStep } from '../../../components/seller/products/wizard/MediaStep'
 import { PublishStep } from '../../../components/seller/products/wizard/PublishStep'
-import { VariantsStep } from '../../../components/seller/products/wizard/VariantsStep'
 import {
   ProgressSummary,
   WizardSteps,
@@ -80,19 +79,6 @@ export function SellerProductWizardPage() {
           <OptionsStep
             key={product.attributes.map((attribute) => attribute.id).join(',')}
             onBack={() => goTo('BASICS')}
-            onSaved={async (hasVariants) => {
-              await wizard.refresh()
-              // The step list this render captured predates the save, so the
-              // seller's answer decides where they land.
-              goTo(hasVariants ? 'VARIANTS' : 'MEDIA')
-            }}
-            wizard={wizard}
-          />
-        )}
-
-        {step === 'VARIANTS' && product && (
-          <VariantsStep
-            onBack={() => goTo('ATTRIBUTES')}
             onSaved={async () => {
               await wizard.refresh()
               goTo('MEDIA')
@@ -103,7 +89,7 @@ export function SellerProductWizardPage() {
 
         {step === 'MEDIA' && product && (
           <MediaStep
-            onBack={() => goTo(wizard.steps.includes('VARIANTS') ? 'VARIANTS' : 'ATTRIBUTES')}
+            onBack={() => goTo('ATTRIBUTES')}
             onSaved={async () => {
               await wizard.refresh()
               goTo('PUBLISH')

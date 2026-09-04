@@ -1,6 +1,6 @@
 import { Check, Search, Upload, X } from 'lucide-react'
 import { useEffect, useMemo, useState, type FormEvent } from 'react'
-import { Badge, Button, Modal, ModalFooter } from '../../ui'
+import { Button, Modal, ModalFooter } from '../../ui'
 import { useToast } from '../../../hooks/useToast'
 import {
   sellerProductsApi,
@@ -111,7 +111,15 @@ function ProductPicker({ onChange, picked }: {
     const timer = setTimeout(() => {
       setLoading(true)
       sellerProductsApi
-        .list({ limit: PAGE_SIZE, search: search.trim(), sortBy: 'name', sortOrder: 'asc' })
+        .list({
+          limit: PAGE_SIZE,
+          search: search.trim(),
+          sortBy: 'name',
+          sortOrder: 'asc',
+          // Only live products can be tagged: a draft has nothing for a viewer
+          // to open, so offering it would create a dead link in the feed.
+          status: 'ACTIVE',
+        })
         .then((page) => {
           if (!live) return
           setResults(page.contents)
@@ -142,7 +150,7 @@ function ProductPicker({ onChange, picked }: {
           Products in this video ({picked.length})
         </span>
         <span className="text-[10px] text-muted">
-          {total} in your catalogue
+          {total} published
         </span>
       </div>
 
@@ -197,7 +205,6 @@ function ProductPicker({ onChange, picked }: {
                   {product.categories.map((item) => item.name).join(', ') || 'Uncategorised'}
                 </span>
               </span>
-              <Badge tone={product.status === 'ACTIVE' ? 'success' : 'warning'}>{product.status}</Badge>
               {on && <Check className="shrink-0 text-primary-dark" size={14} />}
             </button>
           )

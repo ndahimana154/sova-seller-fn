@@ -1,10 +1,13 @@
 import { Building2, FileCheck2, LoaderCircle, MapPin } from "lucide-react";
 import { useEffect, useState, type FormEvent } from "react";
-import { renewShopApplication, submitShopApplication, trackShopApplication, type ShopApplicationPayload } from "../../lib/sellerApi";
-import { AddressField, type AddressValue } from "../../components/form/AddressField";
+import { renewShopApplication, requestApplicationTracking, submitShopApplication, trackShopApplication, type ShopApplicationPayload } from "../../lib/sellerApi";
+import { ApplicationSubmittedModal } from "../../components/seller/application/ApplicationSubmittedModal";
+import { TrackingOtpModal } from "../../components/seller/application/TrackingOtpModal";
+import { LocationField, type LocationValue } from "../../components/form/LocationField";
+import { PhoneField } from "../../components/form/PhoneField";
 import { TermsDialog } from "../../components/seller/application/TermsDialog";
 import { policyApi } from "../../lib/policyApi";
-import { PHONE_HINT, normalizePhone } from "../../lib/phone";
+import { normalizePhone, validatePhone } from "../../lib/phone";
 import { normalizeApiError } from "../../api/errors";
 import { useToast } from "../../hooks/useToast";
 import {
@@ -27,21 +30,27 @@ export function SellerApplicationPage() {
   const account = loadSellerAccount();
   const [termsOpen, setTermsOpen] = useState(false);
   const [termsVersion, setTermsVersion] = useState("");
-  const [address, setAddress] = useState<AddressValue>({
-    addressHouseNumber: "",
+  const [address, setAddress] = useState<LocationValue>({
     addressLabel: "",
     addressLatitude: null,
     addressLongitude: null,
     addressPlaceId: null,
   });
+  const [shopPhone, setShopPhone] = useState("");
+  const [repPhone, setRepPhone] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const toast = useToast();
   const [formVersion, setFormVersion] = useState(0);
   const [validationErrors, setValidationErrors] = useState<Record<string, string>>({});
   const [tracking, setTracking] = useState(false);
   const [trackingError, setTrackingError] = useState("");
+  const [otpGate, setOtpGate] = useState<{ applicationCode: string; email: string } | null>(null);
+  const [otpError, setOtpError] = useState("");
+  const [verifying, setVerifying] = useState(false);
+  const [submitted, setSubmitted] = useState<ApplicationRecord | null>(null);
   const [application, setApplication] = useState<ApplicationRecord | null>(null);
   const [renewalApplication, setRenewalApplication] = useState<ApplicationRecord | null>(null);
+  const [renewalToken, setRenewalToken] = useState<string | null>(null);
 
   useEffect(() => {
     localStorage.removeItem("sova-seller-application");
@@ -59,26 +68,47 @@ export function SellerApplicationPage() {
 
 
 
+  async function sendTrackingCode(applicationCode: string) {
+    setTracking(true);
+    setTrackingError("");
+    try {
+      const { email } = await requestApplicationTracking(applicationCode);
+      setOtpGate({ applicationCode, email });
+      setOtpError("");
+      return true;
+    } catch (error) {
+      setTrackingError(normalizeApiError(error).message);
+      return false;
+    } finally {
+      setTracking(false);
+    }
+  }
+
   async function trackApplication(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     const applicationCode = String(new FormData(event.currentTarget).get("applicationCode")).trim();
     if (!applicationCode) return;
+    await sendTrackingCode(applicationCode);
+  }
 
-    setTracking(true);
-    setTrackingError("");
+  async function verifyTrackingCode(otp: string) {
+    if (!otpGate) return;
+    setVerifying(true);
+    setOtpError("");
     try {
-      const response = await trackShopApplication(applicationCode);
+      const response = await trackShopApplication(otpGate.applicationCode, otp);
       const record: ApplicationRecord = {
         ...response,
         applicantEmail: account.email || undefined,
         submittedAt: response.history[0]?.createdAt || new Date().toISOString(),
       };
+      setOtpGate(null);
       setApplication(record);
       window.scrollTo({ top: 0, behavior: "smooth" });
     } catch (error) {
-      setTrackingError(normalizeApiError(error).message);
+      setOtpError(normalizeApiError(error).message);
     } finally {
-      setTracking(false);
+      setVerifying(false);
     }
   }
 
@@ -97,6 +127,24 @@ export function SellerApplicationPage() {
       toast.error("Please attach the RDB registration document.");
       return;
     }
+    const phoneErrors: Record<string, string> = {};
+    const shopPhoneError = validatePhone(shopPhone);
+    if (shopPhoneError) phoneErrors.phone = shopPhoneError;
+    const repPhoneError = validatePhone(repPhone);
+    if (repPhoneError) phoneErrors.representativePhone = repPhoneError;
+    if (Object.keys(phoneErrors).length) {
+      setValidationErrors(phoneErrors);
+      toast.error("Check the phone numbers before submitting.");
+      return;
+    }
+    if (!address.addressLabel.trim() || !address.addressLatitude || !address.addressLongitude) {
+      setValidationErrors({
+        addressLabel: "Place the pin on the shop entrance and press Confirm.",
+      });
+      toast.error("Choose where the shop is located.");
+      document.getElementById("shop-location")?.scrollIntoView({ behavior: "smooth", block: "center" });
+      return;
+    }
     const applicantEmail = String(data.get("applicantEmail")).trim();
     const applicantName = String(data.get("applicantName")).trim();
     const payload: ShopApplicationPayload = {
@@ -104,10 +152,9 @@ export function SellerApplicationPage() {
       applicantName,
       name: String(data.get("shopName")).trim(),
       email: String(data.get("shopEmail")).trim(),
-      phone: normalizePhone(String(data.get("phone"))),
-      representativePhone: normalizePhone(String(data.get("representativePhone"))),
+      phone: normalizePhone(shopPhone),
+      representativePhone: normalizePhone(repPhone),
       description: String(data.get("description")).trim(),
-      addressHouseNumber: address.addressHouseNumber.trim(),
       addressLabel: address.addressLabel.trim(),
       addressPlaceId: address.addressPlaceId,
       addressLatitude: address.addressLatitude,
@@ -120,12 +167,26 @@ export function SellerApplicationPage() {
     setSubmitting(true);
     setValidationErrors({});
     try {
-      await (renewalApplication ? renewShopApplication(renewalApplication.applicationCode, payload) : submitShopApplication(payload));
+      if (renewalApplication && !renewalToken) {
+        toast.error("Your verification expired. Track the application again to edit it.");
+        setRenewalApplication(null);
+        return;
+      }
+      const response = await (renewalApplication
+        ? renewShopApplication(renewalApplication.applicationCode, payload, renewalToken!)
+        : submitShopApplication(payload));
+      setRenewalToken(null);
       setRenewalApplication(null);
       setApplication(null);
-      setAddress({ addressHouseNumber: "", addressLabel: "", addressLatitude: null, addressLongitude: null, addressPlaceId: null });
+      setAddress({ addressLabel: "", addressLatitude: null, addressLongitude: null, addressPlaceId: null });
+      setShopPhone("");
+      setRepPhone("");
       setFormVersion((current) => current + 1);
-      toast.success("Your request has been sent successfully.");
+      setSubmitted({
+        ...response,
+        applicantEmail: account.email || undefined,
+        submittedAt: response.history[0]?.createdAt || new Date().toISOString(),
+      });
       window.scrollTo({ top: 0, behavior: "smooth" });
     } catch (error) {
       toast.error(normalizeApiError(error).message);
@@ -136,8 +197,10 @@ export function SellerApplicationPage() {
 
   function editReturnedApplication(returnedApplication: ApplicationRecord) {
     const shop = returnedApplication.shop;
+    setRenewalToken(returnedApplication.verificationToken ?? null);
+    setShopPhone(shop.phone ?? "");
+    setRepPhone(shop.representativePhone ?? "");
     setAddress({
-      addressHouseNumber: shop.addressHouseNumber ?? "",
       addressLabel: shop.addressLabel ?? "",
       addressLatitude: shop.addressLatitude ?? null,
       addressLongitude: shop.addressLongitude ?? null,
@@ -191,7 +254,7 @@ export function SellerApplicationPage() {
                   <input defaultValue={renewalShop?.email || ""} name="shopEmail" placeholder="shop@example.com" required type="email" />
                 </FormField>
                 <FormField label="Shop phone">
-                  <input defaultValue={renewalShop?.phone || ""} inputMode="numeric" maxLength={16} name="phone" onBlur={(event) => { event.target.value = normalizePhone(event.target.value) }} pattern="07(8|9|3|2)[0-9]{7}" placeholder="0781234567" required title={`Use ${PHONE_HINT}.`} type="tel" />
+                  <PhoneField name="phone" onChange={setShopPhone} required value={shopPhone} />
                 </FormField>
                 <FormField className="sm:col-span-2 lg:col-span-3" label="Shop description">
                   <textarea className="min-h-28 resize-y" defaultValue={renewalShop?.description || ""} maxLength={2000} minLength={20} name="description" placeholder="Describe what you sell, where products come from, and what makes your shop trustworthy." required />
@@ -207,21 +270,27 @@ export function SellerApplicationPage() {
                   <input defaultValue={renewalShop?.representativeEmail || prefilledAccount.email} name="applicantEmail" placeholder="you@example.com" readOnly={Boolean(prefilledAccount.email)} required type="email" />
                 </FormField>
                 <FormField label="Representative phone">
-                  <input defaultValue={renewalShop?.representativePhone || ""} inputMode="numeric" maxLength={16} name="representativePhone" onBlur={(event) => { event.target.value = normalizePhone(event.target.value) }} pattern="07(8|9|3|2)[0-9]{7}" placeholder="0781234567" required title={`Use ${PHONE_HINT}.`} type="tel" />
+                  <PhoneField name="representativePhone" onChange={setRepPhone} required value={repPhone} />
                 </FormField>
               </div>
             </div>
 
             <div className="mt-10 border-t border-line pt-8">
-              <FormHeading icon={<MapPin size={20} />} title="Where is the shop located?" copy="Search for the shop on Google Maps so buyers and couriers get exact directions." />
-              <div className="mt-6">
+              <FormHeading icon={<MapPin size={20} />} title="Where is the shop located?" copy="Drop a pin on the shop entrance so buyers and couriers get exact directions." />
+              <div className="mt-6" id="shop-location">
                 <span className="text-xs font-bold text-ink">
-                  Shop address<span aria-hidden="true" className="ml-1 text-red-600">*</span>
+                  Shop location<span aria-hidden="true" className="ml-1 text-red-600">*</span>
                 </span>
-                <AddressField onChange={setAddress} required value={address} />
-                <p className="mt-1.5 text-[11px] text-muted">
-                  For example 97 KK 19 Ave, Kigali.
-                </p>
+                <div className="mt-1.5">
+                  <LocationField
+                    confirmLabel="Confirm shop location"
+                    searchPlaceholder="Search your shop, building or road"
+                    error={validationErrors.addressLabel}
+                    hint="Search for the shop, or tap the map to place the pin exactly at the entrance couriers should use."
+                    onChange={setAddress}
+                    value={address}
+                  />
+                </div>
               </div>
             </div>
 
@@ -290,6 +359,19 @@ export function SellerApplicationPage() {
                       </form>
         </ValidationErrorsContext.Provider>
       </section>
+      {submitted && <ApplicationSubmittedModal application={submitted} onClose={() => setSubmitted(null)} />}
+      {otpGate && (
+        <TrackingOtpModal
+          applicationCode={otpGate.applicationCode}
+          busy={verifying}
+          email={otpGate.email}
+          error={otpError}
+          onClose={() => { setOtpGate(null); setOtpError(""); }}
+          onResend={() => void sendTrackingCode(otpGate.applicationCode)}
+          onVerify={(otp) => void verifyTrackingCode(otp)}
+          resending={tracking}
+        />
+      )}
       {application && <ApplicationStatusModal application={application} onClose={() => setApplication(null)} onEdit={() => void editReturnedApplication(application)} />}
       {trackingError && <TrackingErrorModal message={trackingError} onClose={() => setTrackingError("")} />}
       {termsOpen && <TermsDialog onClose={() => setTermsOpen(false)} />}

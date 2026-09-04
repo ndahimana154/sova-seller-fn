@@ -11,6 +11,7 @@ const SellerProductDetailsPage = lazy(() => import('../pages/seller/products/Sel
 const SellerProductWizardPage = lazy(() => import('../pages/seller/products/SellerProductWizardPage').then((m) => ({ default: m.SellerProductWizardPage })))
 const SellerProductListPage = lazy(() => import('../pages/seller/products/SellerProductListPage').then((m) => ({ default: m.SellerProductListPage })))
 const SellerDashboardHomePage = lazy(() => import('../pages/seller/SellerDashboardHomePage').then((m) => ({ default: m.SellerDashboardHomePage })))
+const SellerWalletPage = lazy(() => import('../pages/seller/SellerWalletPage').then((m) => ({ default: m.SellerWalletPage })))
 const SellerSettingsPage = lazy(() => import('../pages/seller/SellerSettingsPage').then((m) => ({ default: m.SellerSettingsPage })))
 
 interface AppRoutesProps {
@@ -40,6 +41,7 @@ export function AppRoutes({ application, authScreen, changePassword, dashboardLa
           <Route element={<SellerVideoDetailsPage />} path="product-videos/:videoId" />
           <Route element={<SellerOrdersPage />} path="orders" />
           <Route element={<SellerOrderDetailsPage />} path="orders/:orderNumber" />
+          <Route element={<SellerWalletPage />} path="wallet" />
           <Route element={<SellerSettingsPage />} path="settings" />
           <Route element={<Navigate replace to={appPaths.dashboard} />} path="*" />
         </Route>

@@ -1,5 +1,5 @@
-import { Pencil, ImageIcon, Play } from 'lucide-react'
-import { useCallback, useState, type ReactNode } from 'react'
+import { ImageIcon, Play, X } from 'lucide-react'
+import { useCallback, useEffect, useState, type ReactNode } from 'react'
 import { Link } from 'react-router-dom'
 import { ProductInventory } from '../../../components/seller/products/ProductInventory'
 import { AttributeTags } from '../../../components/ui/AttributeTags'
@@ -11,7 +11,7 @@ import type { ProductMedia, ProductVariant, SellerProduct } from '../../../lib/s
 import { appPaths } from '../../../router/paths'
 import { ui } from '../../../components/ui/styles'
 
-type Tab = 'description' | 'options' | 'variants' | 'inventory'
+type Tab = 'description' | 'versions' | 'inventory'
 
 export function SellerProductDetailsPage() {
   const { loading, product, setProduct } = useSellerProduct()
@@ -37,14 +37,13 @@ export function SellerProductDetailsPage() {
   const variants = product.variants.filter((variant) => variant.isActive)
   const single = variants.length <= 1
   const tabs: Tab[] = single
-    ? ['description', 'options', 'inventory']
-    : ['description', 'variants', 'inventory']
+    ? ['description', 'versions', 'inventory']
+    : ['description', 'versions', 'inventory']
   const active = tabs.includes(tab) ? tab : 'description'
 
   return (
     <div className="space-y-5 p-5">
       <PageTitle
-        actions={<Link className={ui.primaryButton} to={appPaths.productEdit(product.id)}><Pencil size={14} /> Edit</Link>}
         subtitle={`${product.categories.map((category) => category.name).join(', ')} · ${product.variantCount} SKU${product.variantCount > 1 ? 'S' : ''} · #${product.id.slice(0, 8)}`}
         title={product.name}
       />
@@ -104,8 +103,7 @@ export function SellerProductDetailsPage() {
                   </dl>
                 </div>
               )}
-              {active === 'options' && <SingleVariantPanel variant={variants[0]} />}
-              {active === 'variants' && <VariantList variants={variants} />}
+              {active === 'versions' && <VariantList media={product.media} variants={variants} />}
               {active === 'inventory' && <ProductInventory onChanged={applyVariants} product={product} />}
             </div>
           </section>
@@ -215,35 +213,10 @@ function PriceLine({ variant }: { variant: ProductVariant }) {
   )
 }
 
-function SingleVariantPanel({ variant }: { variant?: ProductVariant }) {
-  if (!variant) return <EmptyNote>This product has no SKU yet.</EmptyNote>
-  return (
-    <div className="space-y-4">
-      <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-line bg-canvas px-4 py-3">
-        <div className="space-y-1">
-          <PriceLine variant={variant} />
-          <p className="font-mono text-[10px] text-muted">{variant.sku}</p>
-        </div>
-        <div className="flex items-center gap-2">
-          <span className="text-xs text-muted">
-            On hand <strong className="text-sm text-ink">{variant.stockQuantity}</strong>
-          </span>
-          <StatusBadge value={variant.stockStatus} />
-        </div>
-      </div>
-      <div>
-        <p className="mb-2 text-[10px] font-semibold uppercase tracking-[0.08em] text-muted">Options</p>
-        <AttributeTags
-          attributes={attributeMap(variant)}
-          emptyMessage="No options added for this product."
-        />
-      </div>
-    </div>
-  )
-}
-
-function VariantList({ variants }: { variants: ProductVariant[] }) {
-  if (!variants.length) return <EmptyNote>This product has no SKUs yet.</EmptyNote>
+function VariantList({ media, variants }: { media: ProductMedia[]; variants: ProductVariant[] }) {
+  const [viewing, setViewing] = useState<string | null>(null)
+  if (!variants.length) return <EmptyNote>This product has no versions yet.</EmptyNote>
+  const images = media.filter((item) => item.mediaType === 'IMAGE')
   return (
     <div className="space-y-3">
       {variants.map((variant, index) => (
@@ -251,7 +224,7 @@ function VariantList({ variants }: { variants: ProductVariant[] }) {
           <header className="flex flex-wrap items-start justify-between gap-3">
             <div className="min-w-0">
               <strong className="flex items-center gap-2 text-sm font-bold text-ink">
-                <span className="truncate">{variant.name?.trim() || `Variant ${index + 1}`}</span>
+                <span className="truncate">{variant.name?.trim() || `Version ${index + 1}`}</span>
                 {variant.isDefault && <Badge tone="info">Default</Badge>}
               </strong>
               <span className="font-mono text-[10px] text-muted">{variant.sku}</span>
@@ -268,12 +241,85 @@ function VariantList({ variants }: { variants: ProductVariant[] }) {
             <PriceLine variant={variant} />
           </div>
 
+          <VersionPhotos
+            onView={setViewing}
+            photos={images.filter((item) => item.variantId === variant.id)}
+          />
+
           <div className="mt-3">
             <p className="mb-1.5 text-[10px] font-semibold uppercase tracking-[0.08em] text-muted">Options</p>
-            <AttributeTags attributes={attributeMap(variant)} emptyMessage="No options on this variant." size="sm" />
+            <AttributeTags attributes={attributeMap(variant)} emptyMessage="No options on this version." size="sm" />
           </div>
         </article>
       ))}
+
+      {viewing && <PhotoLightbox onClose={() => setViewing(null)} url={viewing} />}
+    </div>
+  )
+}
+
+function VersionPhotos({
+  onView,
+  photos,
+}: {
+  onView: (url: string) => void
+  photos: ProductMedia[]
+}) {
+  return (
+    <div className="mt-3 border-t border-line pt-3">
+      <p className="mb-1.5 text-[10px] font-semibold uppercase tracking-[0.08em] text-muted">
+        Photos
+      </p>
+      {photos.length === 0 ? (
+        <p className="text-[11px] text-muted">No photos on this version yet.</p>
+      ) : (
+        <div className="flex flex-wrap gap-2">
+          {photos.map((photo) => (
+            <button
+              aria-label="View photo full size"
+              className="overflow-hidden rounded-lg border border-line transition hover:border-ink/40"
+              key={photo.id}
+              onClick={() => onView(mediaUrl(photo.url))}
+              type="button"
+            >
+              <img alt="" className="size-20 object-cover" src={mediaUrl(photo.url)} />
+            </button>
+          ))}
+        </div>
+      )}
+    </div>
+  )
+}
+
+/** Opens a photo over the page so the seller keeps their place. */
+function PhotoLightbox({ onClose, url }: { onClose: () => void; url: string }) {
+  useEffect(() => {
+    const onKey = (event: KeyboardEvent) => { if (event.key === 'Escape') onClose() }
+    document.addEventListener('keydown', onKey)
+    return () => document.removeEventListener('keydown', onKey)
+  }, [onClose])
+
+  return (
+    <div
+      aria-modal="true"
+      className="fixed inset-0 z-[90] grid place-items-center bg-ink/85 p-4 backdrop-blur-sm"
+      onClick={onClose}
+      role="dialog"
+    >
+      <button
+        aria-label="Close photo"
+        className="absolute right-4 top-4 grid size-9 place-items-center rounded-full bg-white/15 text-white transition hover:bg-white/25"
+        onClick={onClose}
+        type="button"
+      >
+        <X size={17} />
+      </button>
+      <img
+        alt=""
+        className="max-h-full max-w-full rounded-xl object-contain"
+        onClick={(event) => event.stopPropagation()}
+        src={url}
+      />
     </div>
   )
 }

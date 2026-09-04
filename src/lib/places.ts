@@ -121,6 +121,40 @@ export function resolvePlace(suggestion: PlaceSuggestion): ResolvedPlace {
   }
 }
 
+export interface ReverseResult {
+  description: string
+  placeId: string | null
+}
+
+/** What is at these coordinates — used after the customer drags the pin. */
+export async function reverseGeocode(
+  latitude: number,
+  longitude: number,
+  signal?: AbortSignal,
+): Promise<ReverseResult | null> {
+  const url = new URL(PHOTON_URL.replace(/\/api$/, '/reverse'))
+  url.searchParams.set('lat', String(latitude))
+  url.searchParams.set('lon', String(longitude))
+  url.searchParams.set('limit', '1')
+  url.searchParams.set('lang', 'en')
+
+  try {
+    const response = await fetch(url, { signal })
+    if (!response.ok) return null
+    const body = (await response.json()) as { features?: PhotonFeature[] }
+    const feature = body.features?.[0]
+    if (!feature) return null
+    const suggestion = toSuggestion(feature)
+    return suggestion
+      ? { description: suggestion.description, placeId: suggestion.placeId }
+      : null
+  } catch {
+    return null
+  }
+}
+
+export const KIGALI_CENTRE = { latitude: -1.9441, longitude: 30.0619 }
+
 export function mapsLink(value: {
   addressLabel?: string | null
   addressLatitude?: string | null
@@ -133,4 +167,8 @@ export function mapsLink(value: {
     return `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(value.addressLabel)}`
   }
   return null
+}
+
+export function coordinateLabel(latitude: number | string, longitude: number | string) {
+  return `Pinned location (${Number(latitude).toFixed(5)}, ${Number(longitude).toFixed(5)})`
 }

@@ -44,7 +44,7 @@ export function PackOrderDialog({ busy, onClose, onConfirm, orderNumber }: PackO
         </div>
 
         <div>
-          <span className="form-label">
+          <span className="block text-[11px] font-black uppercase tracking-[0.12em] text-muted">
             Photo of the packed parcel<span className="ml-0.5 text-red-600">*</span>
           </span>
 
@@ -89,16 +89,17 @@ export function PackOrderDialog({ busy, onClose, onConfirm, orderNumber }: PackO
         </div>
 
         <label className="block">
-          <span className="form-label">Note for the courier</span>
-          <span className="form-input">
-            <textarea
-              maxLength={300}
-              onChange={(event) => setNote(event.target.value)}
-              placeholder="e.g. Fragile — 2 boxes. Ask for Eric at the front desk."
-              rows={3}
-              value={note}
-            />
+          <span className="block text-[11px] font-black uppercase tracking-[0.12em] text-muted">
+            Note for the courier
           </span>
+          <textarea
+            className="mt-1.5 w-full resize-y rounded-xl border border-line bg-white px-3 py-2 text-xs text-ink outline-none transition placeholder:text-faint focus:border-ink focus:ring-4 focus:ring-ink/10"
+            maxLength={300}
+            onChange={(event) => setNote(event.target.value)}
+            placeholder="e.g. Fragile — 2 boxes. Ask for Eric at the front desk."
+            rows={3}
+            value={note}
+          />
           <span className="mt-1 flex items-center justify-between text-[10px] text-faint">
             <span>Optional — shown to whoever collects this order.</span>
             <span>{note.length}/300</span>

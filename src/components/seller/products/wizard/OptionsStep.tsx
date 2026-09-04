@@ -1,27 +1,21 @@
-import { ArrowLeft, ArrowRight, Plus, X } from 'lucide-react'
-import { useState, type FormEvent } from 'react'
+import { ArrowLeft, ArrowRight, Plus } from 'lucide-react'
+import { useEffect, useMemo, useState, type FormEvent } from 'react'
 import { sellerProductsApi } from '../../../../lib/sellerProductsApi'
 import { useToast } from '../../../../hooks/useToast'
-import { useConfirm } from '../../../ui/ConfirmDialog'
-import { Field, FormSection } from '../ProductPageUi'
-import { PriceField } from './PriceField'
+import { PRODUCT_MAX_OPTION_AXES, productLimits } from '../../../../lib/systemParameters'
+import { FormSection } from '../ProductPageUi'
+import { VersionCard } from './VersionCard'
 import { StepFooter, StepIssues } from './WizardShell'
+import {
+  emptyVersion,
+  hasVersionErrors,
+  optionNamesOf,
+  versionErrors,
+  versionsFromProduct,
+  type VersionDraft,
+} from './versionDraft'
 import type { WizardState } from './useProductWizard'
 import { ui } from '../../../ui/styles'
-
-interface OptionDraft {
-  /** The saved option id, or '' for a row the seller just added. */
-  attributeId: string
-  key: string
-  name: string
-}
-
-interface OptionValueDraft {
-  attributeId: string
-  key: string
-  name: string
-  value: string
-}
 
 export function OptionsStep({
   onBack,
@@ -33,139 +27,134 @@ export function OptionsStep({
   wizard: WizardState
 }) {
   const { product } = wizard
-  const defaultVariant = product?.variants.find((variant) => variant.isPlaceholder && variant.isActive) ?? null
-  const [mode, setMode] = useState<'single' | 'multiple'>(wizard.hasOptions ? 'multiple' : 'single')
-  const [options, setOptions] = useState<OptionDraft[]>(() =>
-    (product?.attributes ?? []).map((attribute) => ({
-      attributeId: attribute.id,
-      key: attribute.id,
-      name: attribute.name,
-    })),
-  )
-  const [attributes, setAttributes] = useState<OptionValueDraft[]>(() =>
-    (product?.attributes ?? []).map((attribute) => ({
-      attributeId: attribute.id,
-      key: attribute.id,
-      name: attribute.name,
-      value: defaultVariant?.attributes.find((item) => item.attributeId === attribute.id)?.value ?? '',
-    })),
-  )
+  const [versions, setVersions] = useState<VersionDraft[]>(() => versionsFromProduct(product))
+  const [showErrors, setShowErrors] = useState(false)
+  const [maxOptions, setMaxOptions] = useState(8)
   const [saving, setSaving] = useState(false)
   const toast = useToast()
-  const confirm = useConfirm()
+
+  useEffect(() => {
+    void productLimits().then((limits) => setMaxOptions(limits[PRODUCT_MAX_OPTION_AXES]))
+  }, [])
+
   const issues = wizard.progress?.steps.find((step) => step.key === 'ATTRIBUTES')?.issues ?? []
+  // More than one version is what makes this a product with variants; the
+  // seller never answers that question directly.
+  const named = versions.length > 1
+  const errors = useMemo(
+    () => versions.map((version) => versionErrors(version, named)),
+    [named, versions],
+  )
+  const optionNames = useMemo(() => optionNamesOf(versions), [versions])
 
-  const variantsUsing = (attributeId: string) =>
-    (product?.variants ?? []).filter(
-      (variant) =>
-        variant.isActive &&
-        variant.attributes.some((item) => item.attributeId === attributeId),
-    )
-
-  async function confirmDrop(attributeId: string, name: string) {
-    const users = attributeId ? variantsUsing(attributeId) : []
-    if (!users.length) return true
-    return confirm({
-      body: (
-        <>
-          <p>
-            “{name || 'This option'}” is used by {users.length} variant
-            {users.length > 1 ? 's' : ''}:
-          </p>
-          <ul className="mt-2 list-disc space-y-0.5 pl-4">
-            {users.slice(0, 6).map((variant) => (
-              <li key={variant.id}>
-                {variant.name?.trim() || variant.sku}
-                <span className="ml-1.5 text-muted">
-                  {variant.attributes.find((item) => item.attributeId === attributeId)?.value}
-                </span>
-              </li>
-            ))}
-            {users.length > 6 && <li>and {users.length - 6} more</li>}
-          </ul>
-          <p className="mt-2">
-            Removing it clears that value from them. The variants themselves stay, with everything
-            else intact.
-          </p>
-        </>
-      ),
-      confirmLabel: 'Remove option',
-      danger: true,
-      title: 'Remove this option?',
-    })
+  function update(key: string, next: VersionDraft) {
+    setVersions((current) => current.map((item) => (item.key === key ? next : item)))
   }
 
-  async function dropOption(option: OptionDraft) {
-    if (!(await confirmDrop(option.attributeId, option.name))) return
-    setOptions((current) => current.filter((item) => item.key !== option.key))
-  }
-
-  async function dropValue(row: OptionValueDraft) {
-    if (!(await confirmDrop(row.attributeId, row.name))) return
-    setAttributes((current) => current.filter((item) => item.key !== row.key))
-  }
-
-  async function saveSingle(form: FormData) {
-    if (!product) return
-    const rows = attributes.map((row) => ({
-      id: row.attributeId || undefined,
-      name: row.name.trim(),
-      value: row.value.trim(),
-    }))
-    if (rows.some((row) => !row.name || !row.value)) {
-      throw new Error('Every option needs both a name and a value.')
-    }
-    const discount = Number(form.get('discountPercent') ?? 0)
-    if (!Number.isInteger(discount) || discount < 0 || discount > 99) {
-      throw new Error('Discount must be a whole number between 0 and 99.')
-    }
-    const existing = product.variants.find((variant) => variant.isPlaceholder && variant.isActive)
-
-    const saved = await sellerProductsApi.saveAttributes(
-      product.id,
-      rows.map(({ id, name }) => ({ id, name })),
-      false,
-    )
-    const idByName = new Map(saved.map((attribute) => [attribute.name.toLowerCase(), attribute.id]))
-
-    const payload = {
-      attributes: rows.map((row) => ({
-        attributeId: idByName.get(row.name.toLowerCase()) ?? '',
-        value: row.value,
-      })),
-      discountPercent: discount || null,
-      price: Number(form.get('price') ?? 0),
-      sku: String(form.get('sku') ?? '').trim(),
-    }
-    if (existing) {
-      await sellerProductsApi.updateVariant(product.id, existing.id, payload)
-    } else {
-      await sellerProductsApi.createVariant(product.id, {
-        ...payload,
-        stockQuantity: Number(form.get('stockQuantity') ?? 0),
-      })
-    }
-  }
-
-  async function saveMultiple() {
-    if (!product) return
-    const rows = options.map((option) => ({
-      id: option.attributeId || undefined,
-      name: option.name.trim(),
-    }))
-    if (!rows.length) throw new Error('Add at least one option, or choose "one version only".')
-    if (rows.some((row) => !row.name)) throw new Error('Every option needs a name.')
-    await sellerProductsApi.saveAttributes(product.id, rows, true)
+  function remove(key: string) {
+    setVersions((current) => current.filter((item) => item.key !== key))
   }
 
   async function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
+    setShowErrors(true)
+    if (errors.some(hasVersionErrors)) return
+    if (optionNames.length > maxOptions) {
+      toast.error(`A product can have at most ${maxOptions} options.`)
+      return
+    }
+    if (!product) return
+
     setSaving(true)
     try {
-      if (mode === 'single') await saveSingle(new FormData(event.currentTarget))
-      else await saveMultiple()
-      toast.success(mode === 'single' ? 'Price and stock saved.' : 'Options saved.')
-      onSaved(mode === 'multiple')
+      // Register the option names first, but leave the product's mode alone:
+      // flipping it here would reconcile variants against a set the server has
+      // not been told about yet, and retire ones the seller is keeping.
+      const attributes = await sellerProductsApi.saveAttributes(
+        product.id,
+        optionNames.map((name) => ({ name })),
+      )
+      const idByName = new Map(
+        attributes.map((attribute) => [attribute.name.toLowerCase(), attribute.id]),
+      )
+
+      for (const version of versions) {
+        const payload = {
+          attributes: version.options
+            .filter((option) => option.name.trim() && option.value.trim())
+            .map((option) => ({
+              attributeId: idByName.get(option.name.trim().toLowerCase()) ?? '',
+              value: option.value.trim(),
+            })),
+          discountPercent: Number(version.discountPercent) || null,
+          name: version.name.trim(),
+          price: Number(version.price),
+          // Blank means none. On an existing version the server turns any
+          // change into a stock movement, so the ledger stays complete.
+          stockQuantity: Number(version.stockQuantity) || 0,
+        }
+        const saved = version.saved
+          ? (await sellerProductsApi.updateVariant(product.id, version.saved.id, payload)).find(
+              (variant) => variant.id === version.saved?.id,
+            )
+          : (await sellerProductsApi.createVariant(product.id, payload)).at(-1)
+
+        const variantId = saved?.id ?? version.saved?.id
+        if (variantId) {
+          // Only one photo product-wide can be the primary, so a later version
+          // saving its own would unset this one's. Writing the starred photo
+          // first as well means each version still leads with what was starred,
+          // whichever ends up holding the product-level flag.
+          const ordered = [...version.photos].sort(
+            (a, b) =>
+              Number(b.key === version.coverKey) - Number(a.key === version.coverKey),
+          )
+          for (const [index, photo] of ordered.entries()) {
+            const isPrimary = version.coverKey === photo.key
+            if (photo.file) {
+              await sellerProductsApi.uploadMedia(product.id, {
+                file: photo.file,
+                isPrimary,
+                position: index,
+                variantId,
+              })
+            } else if (photo.id) {
+              await sellerProductsApi.updateMedia(product.id, photo.id, {
+                isPrimary,
+                position: index,
+              })
+            }
+          }
+
+          const keptPhotos = new Set(
+            version.photos.map((photo) => photo.id).filter(Boolean),
+          )
+          for (const photo of product.media) {
+            if (photo.variantId === variantId && !keptPhotos.has(photo.id)) {
+              await sellerProductsApi.deleteMedia(product.id, photo.id)
+            }
+          }
+        }
+      }
+
+      // Anything the seller deleted here is retired on the server too.
+      const keptIds = new Set(versions.map((version) => version.saved?.id).filter(Boolean))
+      for (const variant of product.variants) {
+        if (variant.isActive && !keptIds.has(variant.id)) {
+          await sellerProductsApi.deleteVariant(product.id, variant.id)
+        }
+      }
+
+      // Now that the server holds the final set, settle the mode. Reconciliation
+      // runs against real data and promotes or retires the right versions.
+      await sellerProductsApi.saveAttributes(
+        product.id,
+        optionNames.map((name) => ({ name })),
+        named,
+      )
+
+      toast.success(named ? `${versions.length} versions saved.` : 'Price and stock saved.')
+      onSaved(named)
     } catch (cause) {
       toast.error(cause)
     } finally {
@@ -173,174 +162,53 @@ export function OptionsStep({
     }
   }
 
+  if (!product) return null
+
   return (
-    <form className="space-y-5" onSubmit={submit}>
-      {confirm.dialog}
+    <form className="space-y-5" noValidate onSubmit={submit}>
       <FormSection
-        subtitle="Options are what buyers pick between — size, colour, material. They decide whether this product sells as one SKU or several."
-        title="Does this product come in more than one version?"
+        actions={
+          <button
+            className={ui.outlineButton}
+            onClick={() => setVersions((current) => [...current, emptyVersion()])}
+            type="button"
+          >
+            <Plus size={13} /> Add version
+          </button>
+        }
+        subtitle="Start with one price. Add another version whenever this product sells in more than one form — each one can carry its own options."
+        title="Pricing and versions"
       >
         <div className="space-y-4">
           <StepIssues issues={issues} />
 
-          <div className="grid gap-3 sm:grid-cols-2">
-            <ModeCard
-              active={mode === 'single'}
-              body="One price, one SKU, one stock count — described by its own attributes."
-              onSelect={() => setMode('single')}
-              title="No, one version only"
+          {versions.map((version, index) => (
+            <VersionCard
+              errors={showErrors ? errors[index] : {}}
+              index={index}
+              key={version.key}
+              named={named}
+              onChange={(next) => update(version.key, next)}
+              onRemove={versions.length > 1 ? () => remove(version.key) : undefined}
+              version={version}
             />
-            <ModeCard
-              active={mode === 'multiple'}
-              body="Name the options here, then build each named variant in the next step."
-              onSelect={() => setMode('multiple')}
-              title="Yes, it has variants"
-            />
-          </div>
+          ))}
+
+          <button
+            className={`${ui.outlineButton} w-full justify-center`}
+            onClick={() => setVersions((current) => [...current, emptyVersion()])}
+            type="button"
+          >
+            <Plus size={14} /> Add another version
+          </button>
+
+          <p className="text-[11px] leading-5 text-muted">
+            {named
+              ? `${versions.length} versions — each needs its own name and price. Buyers pick between them.`
+              : 'One version, so this product sells as a single SKU. Add another to give buyers a choice.'}
+          </p>
         </div>
       </FormSection>
-
-      {mode === 'single' ? (
-        <>
-          <FormSection subtitle="This is what buyers pay and what stock you hold." title="Price and stock">
-            <div className="grid gap-4 md:grid-cols-2">
-              <Field label="SKU">
-                <input
-                  defaultValue={defaultVariant?.sku ?? ''}
-                  name="sku"
-                  placeholder="Leave empty and we generate one"
-                />
-              </Field>
-              <div>
-                <Field label={defaultVariant ? 'Stock on hand' : 'Opening stock'}>
-                  <input
-                    defaultValue={defaultVariant?.stockQuantity ?? 0}
-                    disabled={Boolean(defaultVariant)}
-                    min="0"
-                    name="stockQuantity"
-                    step="1"
-                    type="number"
-                  />
-                </Field>
-                {defaultVariant && (
-                  <p className="text-[11px] leading-5 text-muted">Change it from the Inventory tab, so every move keeps a reason.</p>
-                )}
-              </div>
-              <PriceField defaultValue={defaultVariant?.price ?? 0} label="Price" name="price" />
-              <Field label="Discount (%)">
-                <input
-                  defaultValue={defaultVariant?.discountPercent ?? 0}
-                  max="99"
-                  min="0"
-                  name="discountPercent"
-                  step="1"
-                  type="number"
-                />
-              </Field>
-            </div>
-          </FormSection>
-
-          <FormSection
-            actions={
-              <button
-                className={ui.outlineButton}
-                onClick={() => setAttributes([...attributes, { attributeId: '', key: crypto.randomUUID(), name: '', value: '' }])}
-                type="button"
-              >
-                <Plus size={13} /> Add option
-              </button>
-            }
-            subtitle="What describes this one version — Colour is Red, Material is Cotton. Each needs a name and a value."
-            title="Options"
-          >
-            <div className="space-y-2">
-              {attributes.map((attribute) => (
-                <div className="grid grid-cols-[minmax(0,1fr)_minmax(0,1fr)_32px] gap-2" key={attribute.key}>
-                  <input
-                    className={ui.plainInput}
-                    onChange={(event) =>
-                      setAttributes(
-                        attributes.map((item) =>
-                          item.key === attribute.key ? { ...item, name: event.target.value } : item,
-                        ),
-                      )
-                    }
-                    placeholder="Name, e.g. Colour"
-                    value={attribute.name}
-                  />
-                  <input
-                    className={ui.plainInput}
-                    onChange={(event) =>
-                      setAttributes(
-                        attributes.map((item) =>
-                          item.key === attribute.key ? { ...item, value: event.target.value } : item,
-                        ),
-                      )
-                    }
-                    placeholder="Value, e.g. Red"
-                    value={attribute.value}
-                  />
-                  <button
-                    aria-label="Remove option"
-                    className={`${ui.iconButton} text-red-600`}
-                    onClick={() => void dropValue(attribute)}
-                    type="button"
-                  >
-                    <X size={13} />
-                  </button>
-                </div>
-              ))}
-              {!attributes.length && (
-                <p className={`${ui.hint} p-4`}>
-                  No options yet. Add one if buyers should see it, such as Colour is Red.
-                </p>
-              )}
-            </div>
-          </FormSection>
-        </>
-      ) : (
-        <FormSection
-          actions={
-            <button
-              className={ui.outlineButton}
-              onClick={() => setOptions([...options, { attributeId: '', key: crypto.randomUUID(), name: '' }])}
-              type="button"
-            >
-              <Plus size={13} /> Add option
-            </button>
-          }
-          subtitle="Name them only — you pick which ones each variant carries, and their values, on the next step."
-          title="Options"
-        >
-          <div className="space-y-2">
-            {options.map((option) => (
-              <div className="grid grid-cols-[minmax(0,1fr)_32px] gap-2" key={option.key}>
-                <input
-                  className={ui.plainInput}
-                  onChange={(event) =>
-                    setOptions(options.map((item) => (item.key === option.key ? { ...item, name: event.target.value } : item)))
-                  }
-                  placeholder="e.g. Size"
-                  value={option.name}
-                />
-                <button
-                  aria-label="Remove option"
-                  className={`${ui.iconButton} text-red-600`}
-                  onClick={() => void dropOption(option)}
-                  type="button"
-                >
-                  <X size={13} />
-                </button>
-              </div>
-            ))}
-            {!options.length && (
-              <p className={`${ui.hint} p-4`}>
-                No options yet. Add one, such as Size or Colour.
-              </p>
-            )}
-          </div>
-        </FormSection>
-      )}
 
       <StepFooter
         back={
@@ -355,29 +223,5 @@ export function OptionsStep({
         </button>
       </StepFooter>
     </form>
-  )
-}
-
-function ModeCard({ active, body, onSelect, title }: {
-  active: boolean
-  body: string
-  onSelect: () => void
-  title: string
-}) {
-  return (
-    <button
-      aria-pressed={active}
-      className={`rounded-xl border p-4 text-left transition ${active ? 'border-ink bg-soft' : 'border-line bg-white hover:border-ink/25'}`}
-      onClick={onSelect}
-      type="button"
-    >
-      <span className="flex items-center gap-2">
-        <span className={`grid size-4 shrink-0 place-items-center rounded-full border ${active ? 'border-ink' : 'border-line'}`}>
-          {active && <span className="size-2 rounded-full bg-ink" />}
-        </span>
-        <strong className="text-xs font-bold text-ink">{title}</strong>
-      </span>
-      <span className="mt-2 block text-[11px] leading-5 text-muted">{body}</span>
-    </button>
   )
 }

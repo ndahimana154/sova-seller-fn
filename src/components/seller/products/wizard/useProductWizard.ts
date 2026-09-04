@@ -9,8 +9,7 @@ import {
 } from '../../../../lib/sellerProductsApi'
 import { useToast } from '../../../../hooks/useToast'
 
-const SIMPLE_STEPS: ProductStep[] = ['BASICS', 'ATTRIBUTES', 'MEDIA', 'PUBLISH']
-const OPTION_STEPS: ProductStep[] = ['BASICS', 'ATTRIBUTES', 'VARIANTS', 'MEDIA', 'PUBLISH']
+const WIZARD_STEPS: ProductStep[] = ['BASICS', 'ATTRIBUTES', 'MEDIA', 'PUBLISH']
 
 export interface WizardState {
   brands: SellerBrand[]
@@ -79,8 +78,8 @@ export function useProductWizard(productId: string | undefined): WizardState {
 
   const steps = useMemo(() => {
     if (progress?.steps.length) return progress.steps.map((state) => state.key)
-    return hasOptions ? OPTION_STEPS : SIMPLE_STEPS
-  }, [hasOptions, progress])
+    return WIZARD_STEPS
+  }, [progress])
 
   const stepIndex = useMemo(() => steps.indexOf(step), [step, steps])
 

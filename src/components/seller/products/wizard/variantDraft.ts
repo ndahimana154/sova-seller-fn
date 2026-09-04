@@ -75,10 +75,10 @@ export function variantErrors(draft: VariantDraft) {
     name: draft.name.trim() ? '' : 'Give this variant a name.',
     price: {
       '': '',
-      range: 'Price cannot be negative.',
+      range: 'Price must be more than 0.',
       required: 'Price is required.',
       whole: 'Price must be a whole number.',
-    }[whole(draft.price, { min: 0 })],
+    }[whole(draft.price, { min: 1 })],
     stock: {
       '': '',
       range: 'Stock cannot be negative.',

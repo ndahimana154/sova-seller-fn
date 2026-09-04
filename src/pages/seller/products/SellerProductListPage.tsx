@@ -101,7 +101,7 @@ function ProductCell({ product }: { product: SellerProduct }) {
   const cover = product.media.find((item) => item.isPrimary && item.mediaType === 'IMAGE')
     ?? product.media.find((item) => item.mediaType === 'IMAGE')
   return (
-    <Link className="flex items-center gap-2.5" to={appPaths.productDetails(product.id)}>
+    <div className="flex items-center gap-2.5">
       <span className="grid size-10 shrink-0 place-items-center overflow-hidden rounded-lg border border-line bg-soft">
         {cover
           ? <img alt="" className="size-full object-cover" loading="lazy" src={mediaUrl(cover.url)} />
@@ -111,7 +111,7 @@ function ProductCell({ product }: { product: SellerProduct }) {
         <strong className="block truncate text-ink">{product.name}</strong>
         <span className="block truncate text-[10px] text-muted">{product.brand?.name || 'No brand'}</span>
       </span>
-    </Link>
+    </div>
   )
 }
 
